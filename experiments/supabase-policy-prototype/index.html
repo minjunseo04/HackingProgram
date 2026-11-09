@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Supabase RLS Policy Review — early experiment</title>
+  <style>
+    :root{--ink:#142421;--muted:#66736f;--line:#e1e8e4;--paper:#fbfcfa;--green:#176c52;--mint:#e8f4ee;--amber:#a66211;--amber-bg:#fff4df;--red:#a53731;--red-bg:#fff0ee;--shadow:0 14px 40px #17382b0d}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+    .shell{max-width:1120px;margin:auto;padding:28px 28px 56px}.top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:18px}.brand{display:flex;gap:10px;align-items:center;font-weight:750;letter-spacing:-.03em;font-size:19px}.mark{width:32px;height:32px;background:var(--green);color:white;border-radius:10px;display:grid;place-items:center;font-size:17px}.local{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:5px 10px;border-radius:99px;background:white}
+    .hero{padding:42px 0 28px;max-width:800px}.eyebrow{color:var(--green);font-weight:700;font-size:12px;letter-spacing:.09em;text-transform:uppercase}.hero h1{font-size:38px;line-height:1.14;letter-spacing:-.045em;margin:10px 0 12px}.hero p{font-size:16px;color:var(--muted);max-width:680px;margin:0}
+    .grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,.7fr);gap:18px;align-items:start}.card{background:white;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}.card-head{padding:20px 22px 14px;border-bottom:1px solid #eef1ef}.card-head h2{font-size:17px;margin:0 0 3px;letter-spacing:-.02em}.card-head p{margin:0;color:var(--muted);font-size:13px}.card-body{padding:22px}.drop{min-height:176px;border:1.5px dashed #9ebbae;border-radius:13px;background:#fbfefc;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;cursor:pointer;transition:.15s}.drop:hover,.drop.drag{border-color:var(--green);background:var(--mint)}.drop input{display:none}.upload-icon{width:38px;height:38px;margin:0 auto 8px;background:var(--mint);border-radius:12px;display:grid;place-items:center;color:var(--green);font-size:19px}.drop strong{display:block}.drop span{font-size:13px;color:var(--muted)}.files{margin:12px 0 0;padding:0;list-style:none}.files li{display:flex;justify-content:space-between;gap:12px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;margin-top:7px;font-size:13px}.files em{font-style:normal;color:var(--muted)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.btn{border:0;border-radius:10px;padding:11px 15px;font-weight:700;font-size:14px;cursor:pointer}.primary{background:var(--green);color:white}.primary:disabled{opacity:.45;cursor:not-allowed}.secondary{background:white;border:1px solid var(--line);color:var(--ink)}.scan-note{margin-top:13px;font-size:12px;color:var(--muted)}
+    .side{padding:20px}.side h3{margin:0 0 8px;font-size:15px}.side p{font-size:13px;color:var(--muted);margin:0 0 16px}.step{display:flex;gap:11px;margin:15px 0}.num{flex:0 0 24px;height:24px;border-radius:8px;background:var(--mint);color:var(--green);font-size:12px;font-weight:800;display:grid;place-items:center}.step b{font-size:13px;display:block}.step small{font-size:12px;color:var(--muted)}.price{border-top:1px solid var(--line);margin-top:18px;padding-top:16px}.price strong{font-size:18px}.price span{color:var(--muted);font-size:12px}
+    .notice{background:var(--amber-bg);border:1px solid #f1d9ad;color:#684111;padding:13px 15px;border-radius:11px;font-size:12px;margin:18px 0}.notice b{display:block;margin-bottom:2px}.results{display:none;margin-top:18px}.results.show{display:block}.result-top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.result-top h2{font-size:19px;margin:0}.pill{font-size:11px;font-weight:750;color:var(--amber);background:var(--amber-bg);border-radius:99px;padding:5px 9px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px}.metric{border:1px solid var(--line);border-radius:11px;padding:12px}.metric small{color:var(--muted);display:block;font-size:11px}.metric b{font-size:21px;letter-spacing:-.04em}.finding{border:1px solid var(--line);border-radius:12px;padding:15px;margin:9px 0}.finding-head{display:flex;gap:9px;align-items:center}.severity{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--amber-bg);color:var(--amber);padding:4px 7px;border-radius:6px}.finding h3{font-size:14px;margin:0}.finding p{font-size:13px;color:var(--muted);margin:9px 0}.finding code{font-size:11px;background:#f3f5f3;padding:2px 5px;border-radius:4px}.result-foot{color:var(--muted);font-size:12px;margin-top:12px}.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px;font-size:13px}
+    footer{margin-top:30px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:11px}
+    @media(max-width:760px){.shell{padding:18px 15px 40px}.hero{padding:32px 0 22px}.hero h1{font-size:31px}.grid{grid-template-columns:1fr}.side{order:2}.summary{grid-template-columns:1fr 1fr 1fr}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="top"><div class="brand"><span class="mark">✓</span>Supabase RLS Review</div><span class="local">Early experiment · local files only</span></header>
+    <section class="hero"><div class="eyebrow">Supabase access review for app builders</div><h1>Show that one customer can’t access another customer’s data.</h1><p>Start with your Supabase migration files. Get a clear inventory of access policies and the checks that need a real two-user test before a client handoff.</p></section>
+    <main class="grid">
+      <section>
+        <div class="card">
+          <div class="card-head"><h2>Review a project</h2><p>Choose SQL migration files from the project you own or are authorized to review.</p></div>
+          <div class="card-body">
+            <label class="drop" id="dropzone" for="files">
+              <input id="files" type="file" accept=".sql,text/plain" multiple />
+              <span><span class="upload-icon">↑</span><strong id="drop-title">Drop migration files here</strong><span id="drop-sub">or browse your computer · .sql files</span></span>
+            </label>
+            <ul class="files" id="file-list"></ul>
+            <div class="actions"><button class="btn primary" id="scan" disabled>Review policies</button><button class="btn secondary" id="sample">Load sample project</button></div>
+            <div class="scan-note">This prototype reads SQL text locally. It does not connect to or test a live database.</div>
+          </div>
+        </div>
+        <section class="results" id="results" aria-live="polite">
+          <div class="result-top"><h2>Project report</h2><span class="pill">Static review · behavior not verified</span></div>
+          <div class="card"><div class="card-body" id="report"></div></div>
+        </section>
+      </section>
+      <aside class="card side">
+        <h3>How the first review works</h3><p>A useful handoff report needs evidence, clear limits, and checks a developer can run next.</p>
+        <div class="step"><span class="num">1</span><div><b>Read migration policies</b><small>Identify tables, RLS enablement, and policy statements.</small></div></div>
+        <div class="step"><span class="num">2</span><div><b>Flag review items</b><small>Show broad policies as questions to verify, not confirmed vulnerabilities.</small></div></div>
+        <div class="step"><span class="num">3</span><div><b>Prove access behavior</b><small>Planned MVP: run authorized tests as anonymous and two separate users.</small></div></div>
+        <div class="price"><strong>$19</strong> <span>one project review · test price</span><br><strong>$49/mo</strong> <span>up to 5 client projects · test price</span></div>
+        <div class="notice"><b>No “secure” badge</b>A clean static review is not proof that an app is secure. This tool will report only what it actually checked.</div>
+      </aside>
+    </main>
+    <footer>This is an early Supabase-specific experiment, not the product direction. Only review projects you own or have explicit permission to assess. No data is uploaded from this page.</footer>
+  </div>
+  <script>
+    const picker=document.getElementById('files'), list=document.getElementById('file-list'), scan=document.getElementById('scan'), drop=document.getElementById('dropzone');
+    let selected=[];
+    function showFiles(files){selected=[...files].filter(f=>f.name.toLowerCase().endsWith('.sql'));list.innerHTML=selected.map(f=>`<li><span>${escapeHtml(f.name)}</span><em>${(f.size/1024).toFixed(1)} KB</em></li>`).join('');document.getElementById('drop-title').textContent=selected.length?`${selected.length} migration file${selected.length===1?'':'s'} selected`:'Drop migration files here';document.getElementById('drop-sub').textContent=selected.length?'Ready for a local static review':'or browse your computer · .sql files';scan.disabled=!selected.length;document.getElementById('results').classList.remove('show')}
+    function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+    picker.addEventListener('change',e=>showFiles(e.target.files));
+    drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag')});drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');showFiles(e.dataTransfer.files)});
+    document.getElementById('sample').addEventListener('click',()=>{selected=[];picker.value='';list.innerHTML='<li><span>20261109090000_create_projects.sql</span><em>sample</em></li><li><span>20261109100000_project_policies.sql</span><em>sample</em></li>';document.getElementById('drop-title').textContent='Sample project loaded';document.getElementById('drop-sub').textContent='Example data · no real project selected';scan.disabled=false;scan.dataset.sample='true';document.getElementById('results').classList.remove('show')});
+    scan.addEventListener('click',async()=>{const sample=scan.dataset.sample==='true';let sql='';if(!sample){scan.disabled=true;for(const f of selected)sql+=`\n${await f.text()}\n`;scan.disabled=false}else{sql='create table public.projects (id uuid, user_id uuid); alter table public.projects enable row level security; create policy "read projects" on public.projects for select using (true); create policy "owner insert" on public.projects for insert with check (auth.uid() = user_id); alter table public.profiles disable row level security;'}
+      renderReport(sql,sample);scan.dataset.sample='false';});
+    function renderReport(sql,sample){
+      const tables=new Map();for(const m of sql.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?([\w".]+)/ig)){const name=m[1].replaceAll('"','').split('.').pop();tables.set(name,{name,rls:false,policies:[]})}
+      for(const m of sql.matchAll(/alter\s+table\s+(?:only\s+)?(?:if\s+exists\s+)?([\w".]+)\s+(enable|disable)\s+row\s+level\s+security/ig)){const name=m[1].replaceAll('"','').split('.').pop();if(!tables.has(name))tables.set(name,{name,rls:false,policies:[]});tables.get(name).rls=m[2].toLowerCase()==='enable'}
+      for(const m of sql.matchAll(/create\s+policy\s+"?([^"\n]+?)"?\s+on\s+(?:only\s+)?([\w".]+)([\s\S]*?);/ig)){const name=m[2].replaceAll('"','').split('.').pop();if(!tables.has(name))tables.set(name,{name,rls:false,policies:[]});tables.get(name).policies.push({name:m[1].trim(),body:m[3]})}
+      const rows=[...tables.values()], disabled=rows.filter(t=>!t.rls), broad=[];for(const t of rows)for(const p of t.policies)if(/\b(using|with\s+check)\s*\(\s*true\s*\)/i.test(p.body))broad.push({table:t.name,policy:p.name});
+      const noPolicy=rows.filter(t=>t.rls&&t.policies.length===0);const findings=[];
+      disabled.forEach(t=>findings.push(`<article class="finding"><div class="finding-head"><span class="severity" style="background:var(--red-bg);color:var(--red)">Check required</span><h3>RLS is disabled on <code>${escapeHtml(t.name)}</code></h3></div><p>Confirm whether this table is exposed through an API. This static review cannot determine your runtime exposure or intended access rules.</p></article>`));
+      broad.forEach(x=>findings.push(`<article class="finding"><div class="finding-head"><span class="severity">Review policy</span><h3>Broad expression in <code>${escapeHtml(x.table)}</code></h3></div><p>Policy <code>${escapeHtml(x.policy)}</code> contains an always-true expression. That may be intentional, but it does not demonstrate per-user data isolation. Test with two distinct users.</p></article>`));
+      noPolicy.forEach(t=>findings.push(`<article class="finding"><div class="finding-head"><span class="severity" style="background:var(--mint);color:var(--green)">Behavior test</span><h3><code>${escapeHtml(t.name)}</code> has RLS enabled and no policy found</h3></div><p>In Supabase, this may deny all API access rather than expose data. Confirm expected app behavior; this is not reported as a data leak.</p></article>`));
+      const safe=rows.filter(t=>t.rls&&t.policies.length>0).length;document.getElementById('report').innerHTML=`<div class="summary"><div class="metric"><small>Tables found</small><b>${rows.length}</b></div><div class="metric"><small>With RLS enabled</small><b>${rows.filter(t=>t.rls).length}</b></div><div class="metric"><small>Review items</small><b>${disabled.length+broad.length+noPolicy.length}</b></div></div><p style="color:var(--muted);font-size:13px">${sample?'Sample project':'Local file review'} · ${sample?'Supabase migrations example':'SQL statements only'} · No database was contacted</p>${findings.length?findings.join(''):'<div class="empty">No obvious static review items found. This does not verify row-level access behavior.</div>'}<div class="result-foot">${safe} table(s) have RLS and at least one detected policy. A policy's presence does not prove it enforces the intended tenant boundary. Next product step: run explicit role-based checks in a local or staging database.</div><div class="actions"><button class="btn secondary" id="download">Download report</button></div>`;
+      document.getElementById('results').classList.add('show');document.getElementById('download').onclick=()=>downloadReport(rows,disabled,broad,noPolicy,sample);
+    }
+    function downloadReport(rows,disabled,broad,noPolicy,sample){const lines=['Supabase RLS policy review — early experiment',`Source: ${sample?'sample project':'local SQL migration files'}`,'Scope: static migration review only. No database behavior was tested.','',`Tables found: ${rows.length}`,`RLS enabled: ${rows.filter(t=>t.rls).length}`,`RLS disabled: ${disabled.map(t=>t.name).join(', ')||'none detected'}`,`Always-true policy expressions to review: ${broad.map(x=>`${x.table} / ${x.name}`).join(', ')||'none detected'}`,`RLS enabled with no policy detected: ${noPolicy.map(t=>t.name).join(', ')||'none detected'}`,'','This report is not a penetration test, security certification, or proof that the application is secure. Verify access rules in an authorized local or staging environment using separate user accounts.'];const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));a.download='supabase-rls-review.txt';a.click();URL.revokeObjectURL(a.href)}
+  </script>
+</body>
+</html>

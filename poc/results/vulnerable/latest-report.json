@@ -1,0 +1,49 @@
+{
+  "title": "Access boundary check — local PoC report",
+  "generatedAt": "2026-11-09T02:58:34.258Z",
+  "target": "http://127.0.0.1:4320",
+  "scope": "GET-only checks against a loopback fixture. HTTP status classification is a heuristic, not proof of security.",
+  "counts": {
+    "pass": 2,
+    "review": 1,
+    "inconclusive": 0
+  },
+  "results": [
+    {
+      "id": "own-document-readable",
+      "title": "사용자는 자기 조직 문서를 읽을 수 있음",
+      "identity": "Acme 일반 사용자",
+      "method": "GET",
+      "path": "/api/documents/acme-plan",
+      "expected": "allow",
+      "actual": "allow",
+      "status": 200,
+      "verdict": "pass",
+      "evidence": "Response body: 102 bytes captured; expected marker: matched; forbidden marker matches: 0. Raw response was not saved."
+    },
+    {
+      "id": "cross-tenant-read-blocked",
+      "title": "다른 조직 문서 접근은 차단되어야 함",
+      "identity": "Acme 일반 사용자",
+      "method": "GET",
+      "path": "/api/documents/birch-roadmap",
+      "expected": "deny",
+      "actual": "allow",
+      "status": 200,
+      "verdict": "review",
+      "evidence": "Response body: 110 bytes captured; expected marker: not configured; forbidden marker matches: 2. Raw response was not saved."
+    },
+    {
+      "id": "other-owner-can-read",
+      "title": "문서 소유 조직 사용자는 문서를 읽을 수 있음",
+      "identity": "Birch 일반 사용자",
+      "method": "GET",
+      "path": "/api/documents/birch-roadmap",
+      "expected": "allow",
+      "actual": "allow",
+      "status": 200,
+      "verdict": "pass",
+      "evidence": "Response body: 110 bytes captured; expected marker: matched; forbidden marker matches: 0. Raw response was not saved."
+    }
+  ]
+}

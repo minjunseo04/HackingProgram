@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>경계 확인 — 권한 테스트 데모</title>
+  <style>
+    :root{--ink:#17231f;--muted:#697872;--line:#e2e9e5;--paper:#f6f8f6;--white:#fff;--green:#176b50;--green-bg:#e8f4ee;--red:#a83831;--red-bg:#fff0ed;--amber:#94611a;--amber-bg:#fff5df;--shadow:0 18px 50px #1833260d}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button{font:inherit}.wrap{max-width:1160px;margin:auto;padding:28px 26px 60px}.top{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:18px}.brand{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:760;letter-spacing:-.035em}.logo{width:34px;height:34px;border-radius:11px;background:var(--green);color:#fff;display:grid;place-items:center}.tag{border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 11px;color:var(--muted);font-size:12px}.hero{padding:42px 0 26px;max-width:800px}.eyebrow{font-size:12px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:var(--green)}h1{font-size:36px;line-height:1.14;letter-spacing:-.05em;margin:9px 0 11px}.hero p{color:var(--muted);font-size:16px;margin:0;max-width:720px}.notice{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;background:var(--amber-bg);border:1px solid #f1dfb9;border-radius:13px;color:#694814;font-size:13px;margin:0 0 20px}.notice b{display:block;margin-bottom:2px}.layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(290px,.8fr);gap:18px;align-items:start}.card{background:var(--white);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}.head{padding:19px 21px 14px;border-bottom:1px solid #edf1ee}.head h2{font-size:16px;margin:0 0 3px;letter-spacing:-.02em}.head p{font-size:13px;color:var(--muted);margin:0}.body{padding:20px 21px}.identity-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.identity{border:1px solid var(--line);border-radius:13px;padding:14px}.identity .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:700}.identity strong{display:block;margin:4px 0 2px;font-size:15px}.identity span{font-size:12px;color:var(--muted)}.avatar{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:9px;background:#edf3ef;color:var(--green);font-weight:800;margin-right:7px;vertical-align:middle}.resource{margin-top:16px;border:1px solid var(--line);border-radius:12px;overflow:hidden}.resource-title{padding:11px 13px;background:#fafcfb;font-size:12px;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line)}.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;border-bottom:1px solid #edf1ee}.row:last-child{border-bottom:0}.row strong{font-size:13px;display:block}.row small{font-size:12px;color:var(--muted)}.chip{font-size:11px;border-radius:99px;padding:4px 8px;background:#f0f3f1;color:#52615a;white-space:nowrap}.actions{display:flex;gap:9px;margin-top:17px}.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}.primary{background:var(--green);color:white}.primary:hover{background:#115a42}.secondary{background:white;color:var(--ink);border:1px solid var(--line)}.primary:disabled{opacity:.55;cursor:wait}.side-note{color:var(--muted);font-size:12px;margin:12px 0 0}.report{margin-top:18px;display:none}.report.show{display:block}.report-top{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:18px 21px;border-bottom:1px solid var(--line)}.report-top h2{font-size:16px;margin:0}.status{font-weight:750;font-size:12px;padding:5px 9px;border-radius:99px}.status.fail{background:var(--red-bg);color:var(--red)}.status.pass{background:var(--green-bg);color:var(--green)}.finding{margin:18px 21px;padding:15px;border-radius:12px;background:var(--red-bg);border:1px solid #f0d4d0}.finding.pass{background:var(--green-bg);border-color:#d5e9dd}.finding h3{font-size:14px;margin:0 0 5px}.finding p{font-size:13px;margin:0;color:#53615b}.evidence{margin:0 21px 19px;border:1px solid var(--line);border-radius:12px;overflow:hidden}.evidence-title{font-size:12px;color:var(--muted);font-weight:700;padding:10px 12px;background:#fafcfb;border-bottom:1px solid var(--line)}.evidence-line{display:grid;grid-template-columns:110px 1fr;gap:10px;padding:10px 12px;border-bottom:1px solid #edf1ee;font-size:12px}.evidence-line:last-child{border-bottom:0}.evidence-line b{color:#53615b}.report-actions{display:flex;gap:9px;padding:0 21px 20px}.side .body{padding:18px 20px}.step{display:grid;grid-template-columns:25px 1fr;gap:10px;margin-bottom:15px}.step:last-child{margin-bottom:0}.num{width:23px;height:23px;display:grid;place-items:center;border-radius:8px;background:var(--green-bg);color:var(--green);font-weight:800;font-size:12px}.step b{display:block;font-size:13px}.step small{display:block;color:var(--muted);font-size:12px;margin-top:2px}.scope{background:#f7f9f7;border-radius:11px;padding:12px;margin-top:16px;font-size:12px;color:var(--muted)}footer{text-align:center;color:var(--muted);font-size:12px;padding:28px 10px 0;max-width:800px;margin:auto}
+    @media(max-width:780px){.layout{grid-template-columns:1fr}.wrap{padding:20px 16px 40px}.hero{padding:32px 0 22px}h1{font-size:30px}.tag{font-size:11px}.identity-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:440px){.identity-grid{grid-template-columns:1fr}.actions{flex-direction:column}.btn{width:100%}.report-top{align-items:flex-start;flex-direction:column}.evidence-line{grid-template-columns:1fr;gap:2px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top"><div class="brand"><span class="logo">✓</span>경계 확인</div><span class="tag">제품 방향 데모 · 샘플 데이터</span></header>
+    <section class="hero"><div class="eyebrow">권한 경계 테스트</div><h1>다른 계정의 데이터,<br>정말 차단되고 있나요?</h1><p>두 개의 테스트 계정으로 같은 자료에 접근해보고, 조직 간 접근 규칙과 실제 결과를 비교하는 제품 흐름을 보여주는 데모입니다.</p></section>
+    <div class="notice"><span>ⓘ</span><div><b>시뮬레이션 화면입니다</b>실제 앱, 서버, 계정에 연결하거나 보안 검사를 실행하지 않습니다. 화면의 결과는 설명용 샘플입니다.</div></div>
+    <div class="layout">
+      <section>
+        <div class="card">
+          <div class="head"><h2>테스트 시나리오</h2><p>두 조직의 테스트 계정으로 같은 자료 요청을 비교합니다.</p></div>
+          <div class="body">
+            <div class="identity-grid">
+              <div class="identity"><div class="label">계정 A</div><strong><span class="avatar">A</span>민지 · Acme 조직</strong><span>역할: 일반 사용자</span></div>
+              <div class="identity"><div class="label">계정 B</div><strong><span class="avatar">B</span>준호 · Birch 조직</strong><span>역할: 일반 사용자</span></div>
+            </div>
+            <div class="resource"><div class="resource-title">검사할 작업</div>
+              <div class="row"><div><strong>자기 조직의 프로젝트 보기</strong><small>Acme 프로젝트 · 읽기 요청</small></div><span class="chip">허용되어야 함</span></div>
+              <div class="row"><div><strong>다른 조직 프로젝트 보기</strong><small>Birch 프로젝트 · 계정 A로 읽기 요청</small></div><span class="chip">차단되어야 함</span></div>
+              <div class="row"><div><strong>다른 조직 프로젝트 이름 변경</strong><small>Birch 프로젝트 · 계정 A로 수정 요청</small></div><span class="chip">차단되어야 함</span></div>
+            </div>
+            <div class="actions"><button class="btn primary" id="run">샘플 테스트 실행</button><button class="btn secondary" id="reset">초기화</button></div>
+            <p class="side-note">샘플 실행은 이 브라우저 안에서 미리 정해진 예시 결과만 보여줍니다.</p>
+          </div>
+        </div>
+        <section class="card report" id="report" aria-live="polite">
+          <div class="report-top"><h2>실행 결과 예시</h2><span class="status fail" id="overall">경계 위반 예시 1건</span></div>
+          <div class="finding" id="finding"><h3 id="finding-title">계정 A가 Birch 프로젝트를 읽을 수 있는 것으로 나타남</h3><p id="finding-copy">기대 결과는 접근 차단이지만, 샘플 응답에는 프로젝트 제목이 포함되어 있습니다. 실제 제품에서는 사용자가 승인한 테스트 앱에서 이 요청을 검증해야 합니다.</p></div>
+          <div class="evidence"><div class="evidence-title">재현 정보</div>
+            <div class="evidence-line"><b>실행 신원</b><span id="ev-identity">민지 (Acme · 일반 사용자)</span></div>
+            <div class="evidence-line"><b>요청 대상</b><span id="ev-target">Birch 조직의 프로젝트 / 읽기</span></div>
+            <div class="evidence-line"><b>기대 결과</b><span id="ev-expected">차단</span></div>
+            <div class="evidence-line"><b>샘플 결과</b><span id="ev-actual">200 응답 · 프로젝트 제목 반환</span></div>
+            <div class="evidence-line"><b>검사 범위</b><span>읽기 2건, 수정 1건의 예시만 표시</span></div>
+          </div>
+          <div class="report-actions"><button class="btn secondary" id="download">예시 보고서 저장</button></div>
+        </section>
+      </section>
+      <aside class="card side"><div class="head"><h2>제품 흐름</h2><p>스택에 종속되지 않는 권한 검증 가설</p></div><div class="body">
+        <div class="step"><span class="num">1</span><div><b>테스트 계정과 역할을 지정</b><small>조직 A/B, 관리자/일반 사용자 등 검증할 신원을 고릅니다.</small></div></div>
+        <div class="step"><span class="num">2</span><div><b>기대 접근 규칙을 확인</b><small>누가 어떤 자료를 볼 수 있어야 하는지 사람이 정합니다.</small></div></div>
+        <div class="step"><span class="num">3</span><div><b>같은 요청을 신원별로 비교</b><small>접근 가능 여부와 응답 증거를 나란히 확인합니다.</small></div></div>
+        <div class="step"><span class="num">4</span><div><b>고객에게 결과를 설명</b><small>재현 정보와 검사하지 않은 범위를 함께 보고합니다.</small></div></div>
+        <div class="scope">초기 범위 가설: IDOR/BOLA, 역할 상승, 조직 간 데이터 접근. 모든 취약점을 찾아내거나 앱 전체의 안전을 보증하지 않습니다.</div>
+      </div></aside>
+    </div>
+    <footer>제품 가설을 설명하기 위한 인터랙티브 목업입니다. 실제 요청은 전송되지 않으며, 샘플 결과를 보안 판정이나 고객 증거로 사용하면 안 됩니다.</footer>
+  </main>
+  <script>
+    const report=document.getElementById('report');
+    document.getElementById('run').addEventListener('click',()=>{const b=document.getElementById('run');b.disabled=true;b.textContent='샘플 결과 준비 중…';setTimeout(()=>{report.classList.add('show');b.disabled=false;b.textContent='샘플 테스트 다시 실행';report.scrollIntoView({behavior:'smooth',block:'nearest'})},420)});
+    document.getElementById('reset').addEventListener('click',()=>{report.classList.remove('show');document.getElementById('run').textContent='샘플 테스트 실행';window.scrollTo({top:0,behavior:'smooth'})});
+    document.getElementById('download').addEventListener('click',()=>{const body=['권한 경계 테스트 — 샘플 보고서','상태: 가상 예시 결과 (실제 검사 아님)','', '실행 신원: 민지 (Acme · 일반 사용자)','요청 대상: Birch 조직의 프로젝트 / 읽기','기대 결과: 차단','샘플 결과: 200 응답 · 프로젝트 제목 반환','', '검사 범위: 읽기 2건, 수정 1건의 샘플 시나리오','한계: 실제 앱, API 또는 서버에 연결하지 않았습니다. 이 파일은 설명용 목업입니다.'].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([body],{type:'text/plain;charset=utf-8'}));a.download='sample-access-boundary-report.txt';a.click();URL.revokeObjectURL(a.href)});
+  </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+{
+  "title": "Access boundary check — local PoC report",
+  "generatedAt": "2026-11-09T06:58:06.746Z",
+  "target": "http://127.0.0.1:4321",
+  "scope": "GET-only checks against a loopback fixture. HTTP status classification is a heuristic, not proof of security.",
+  "counts": {
+    "pass": 4,
+    "review": 1,
+    "inconclusive": 0
+  },
+  "results": [
+    {
+      "id": "own-document-readable",
+      "title": "사용자는 자기 조직 문서를 읽을 수 있음",
+      "identity": "Acme 일반 사용자",
+      "method": "GET",
+      "path": "/api/documents/acme-plan",
+      "expected": "allow",
+      "actual": "allow",
+      "status": 200,
+      "verdict": "pass",
+      "evidence": "Response body: 102 bytes captured; expected marker: matched; forbidden marker matches: 0. Raw response was not saved."
+    },
+    {
+      "id": "cross-tenant-read-blocked",
+      "title": "다른 조직 문서 접근은 차단되어야 함",
+      "identity": "Acme 일반 사용자",
+      "method": "GET",
+      "path": "/api/documents/birch-roadmap",
+      "expected": "deny",
+      "actual": "deny",
+      "status": 404,
+      "verdict": "pass",
+      "evidence": "Response body: 21 bytes captured; expected marker: not configured; forbidden marker matches: 0. Raw response was not saved."
+    },
+    {
+      "id": "other-owner-can-read",
+      "title": "문서 소유 조직 사용자는 문서를 읽을 수 있음",
+      "identity": "Birch 일반 사용자",
+      "method": "GET",
+      "path": "/api/documents/birch-roadmap",
+      "expected": "allow",
+      "actual": "allow",
+      "status": 200,
+      "verdict": "pass",
+      "evidence": "Response body: 110 bytes captured; expected marker: matched; forbidden marker matches: 0. Raw response was not saved."
+    },
+    {
+      "id": "member-cannot-read-admin-audit",
+      "title": "일반 사용자는 관리자 감사 로그를 읽을 수 없어야 함",
+      "identity": "Acme 일반 사용자",
+      "method": "GET",
+      "path": "/api/documents/acme-audit-log",
+      "expected": "deny",
+      "actual": "allow",
+      "status": 200,
+      "verdict": "review",
+      "evidence": "Response body: 129 bytes captured; expected marker: not configured; forbidden marker matches: 2. Raw response was not saved."
+    },
+    {
+      "id": "admin-can-read-audit-log",
+      "title": "관리자는 자기 조직 감사 로그를 읽을 수 있음",
+      "identity": "Acme 관리자",
+      "method": "GET",
+      "path": "/api/documents/acme-audit-log",
+      "expected": "allow",
+      "actual": "allow",
+      "status": 200,
+      "verdict": "pass",
+      "evidence": "Response body: 129 bytes captured; expected marker: matched; forbidden marker matches: 0. Raw response was not saved."
+    }
+  ]
+}

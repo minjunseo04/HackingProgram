@@ -1,0 +1,44 @@
+{
+  "authorized": true,
+  "allow_writes": true,
+  "description": "Local in-memory fixture only. Attempts one cross-tenant title change and verifies the owner can still read the original title.",
+  "identities": {
+    "acme-user": {
+      "label": "Acme 일반 사용자",
+      "headers": {
+        "Authorization": "Bearer sample-acme-token"
+      }
+    },
+    "birch-user": {
+      "label": "Birch 일반 사용자",
+      "headers": {
+        "Cookie": "session=sample-birch-token"
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "cross-tenant-title-update-blocked",
+      "title": "Acme 사용자는 Birch 문서 제목을 바꾸면 안 됨",
+      "identity": "acme-user",
+      "method": "PATCH",
+      "path": "/api/documents/birch-roadmap",
+      "body": {
+        "title": "TEST ONLY - unauthorized Acme overwrite"
+      },
+      "expected": "deny",
+      "exists_check": "birch-owner-reads-original-title",
+      "must_not_contain": ["TEST ONLY - unauthorized Acme overwrite"]
+    },
+    {
+      "id": "birch-owner-reads-original-title",
+      "title": "검사 후에도 Birch 문서 제목은 원래 값이어야 함",
+      "identity": "birch-user",
+      "method": "GET",
+      "path": "/api/documents/birch-roadmap",
+      "expected": "allow",
+      "expected_contains": "Birch 제품 로드맵",
+      "must_not_contain": ["TEST ONLY - unauthorized Acme overwrite"]
+    }
+  ]
+}

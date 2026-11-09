@@ -1,0 +1,65 @@
+{
+  "authorized": true,
+  "allow_writes": true,
+  "description": "Local in-memory fixture only. Verifies member-vs-admin write access to an admin-only audit document.",
+  "identities": {
+    "acme-user": {
+      "label": "Acme 일반 사용자",
+      "headers": {
+        "Authorization": "Bearer sample-acme-token"
+      }
+    },
+    "acme-admin": {
+      "label": "Acme 관리자",
+      "headers": {
+        "Authorization": "Bearer sample-acme-admin-token"
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "member-cannot-update-audit-log",
+      "title": "일반 사용자는 관리자 감사 로그를 수정하면 안 됨",
+      "identity": "acme-user",
+      "method": "PATCH",
+      "path": "/api/documents/acme-audit-log",
+      "body": {
+        "title": "TEST ONLY - unauthorized member update"
+      },
+      "expected": "deny",
+      "exists_check": "admin-reads-original-audit-log",
+      "must_not_contain": ["TEST ONLY - unauthorized member update"]
+    },
+    {
+      "id": "admin-reads-original-audit-log",
+      "title": "관리자는 변경 전 감사 로그를 읽을 수 있음",
+      "identity": "acme-admin",
+      "method": "GET",
+      "path": "/api/documents/acme-audit-log",
+      "expected": "allow",
+      "expected_contains": "Acme 운영자 감사 로그",
+      "must_not_contain": ["TEST ONLY - unauthorized member update"]
+    },
+    {
+      "id": "admin-can-update-audit-log",
+      "title": "관리자는 자기 조직 감사 로그를 수정할 수 있음",
+      "identity": "acme-admin",
+      "method": "PATCH",
+      "path": "/api/documents/acme-audit-log",
+      "body": {
+        "title": "TEST ONLY - authorized admin update"
+      },
+      "expected": "allow",
+      "expected_contains": "TEST ONLY - authorized admin update"
+    },
+    {
+      "id": "admin-reads-updated-audit-log",
+      "title": "관리자 수정 결과가 fixture에 반영됨",
+      "identity": "acme-admin",
+      "method": "GET",
+      "path": "/api/documents/acme-audit-log",
+      "expected": "allow",
+      "expected_contains": "TEST ONLY - authorized admin update"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "authorized": true,
+  "description": "Local sample API only. Demonstrates cross-tenant read checks with two sample identities.",
+  "identities": {
+    "acme-user": {
+      "label": "Acme 일반 사용자",
+      "headers": {
+        "Authorization": "Bearer sample-acme-token"
+      }
+    },
+    "acme-admin": {
+      "label": "Acme 관리자",
+      "headers": {
+        "Authorization": "Bearer sample-acme-admin-token"
+      }
+    },
+    "birch-user": {
+      "label": "Birch 일반 사용자",
+      "headers": {
+        "Cookie": "session=sample-birch-token"
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "own-document-readable",
+      "title": "사용자는 자기 조직 문서를 읽을 수 있음",
+      "identity": "acme-user",
+      "method": "GET",
+      "path": "/api/documents/acme-plan",
+      "expected": "allow",
+      "expected_contains": "Acme 출시 계획"
+    },
+    {
+      "id": "cross-tenant-read-blocked",
+      "title": "다른 조직 문서 접근은 차단되어야 함",
+      "identity": "acme-user",
+      "method": "GET",
+      "path": "/api/documents/birch-roadmap",
+      "expected": "deny",
+      "exists_check": "other-owner-can-read",
+      "must_not_contain": ["Birch 제품 로드맵", "Birch 조직의 비공개 로드맵"]
+    },
+    {
+      "id": "other-owner-can-read",
+      "title": "문서 소유 조직 사용자는 문서를 읽을 수 있음",
+      "identity": "birch-user",
+      "method": "GET",
+      "path": "/api/documents/birch-roadmap",
+      "expected": "allow",
+      "expected_contains": "Birch 제품 로드맵"
+    },
+    {
+      "id": "member-cannot-read-admin-audit",
+      "title": "일반 사용자는 관리자 감사 로그를 읽을 수 없어야 함",
+      "identity": "acme-user",
+      "method": "GET",
+      "path": "/api/documents/acme-audit-log",
+      "expected": "deny",
+      "exists_check": "admin-can-read-audit-log",
+      "must_not_contain": ["Acme 운영자 감사 로그", "운영자만 확인할 수 있는 감사 기록"]
+    },
+    {
+      "id": "admin-can-read-audit-log",
+      "title": "관리자는 자기 조직 감사 로그를 읽을 수 있음",
+      "identity": "acme-admin",
+      "method": "GET",
+      "path": "/api/documents/acme-audit-log",
+      "expected": "allow",
+      "expected_contains": "Acme 운영자 감사 로그"
+    }
+  ]
+}

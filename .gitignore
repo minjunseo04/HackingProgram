@@ -1,0 +1,8 @@
+.dotnet-cli/
+.nuget/
+desktop/bin/
+desktop/obj/
+website/downloads/
+.vs/
+*.user
+*.suo

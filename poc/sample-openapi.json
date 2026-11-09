@@ -1,0 +1,50 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Synthetic multi-tenant app API",
+    "version": "1.0.0",
+    "description": "FAKE_DESCRIPTION_SECRET"
+  },
+  "servers": [
+    { "url": "https://app.example.test/api/v2" }
+  ],
+  "security": [{ "sampleAuth": [] }],
+  "components": {
+    "securitySchemes": {
+      "sampleAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key",
+        "example": "FAKE_OPENAPI_KEY_SECRET"
+      }
+    }
+  },
+  "paths": {
+    "/documents/{documentId}": {
+      "get": {
+        "description": "FAKE_OPERATION_DESCRIPTION_SECRET",
+        "responses": { "200": { "description": "OK" } }
+      },
+      "patch": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": { "title": "FAKE_OPENAPI_BODY_SECRET" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/admin/audit": {
+      "get": { "responses": { "200": { "description": "OK" } } },
+      "patch": { "responses": { "200": { "description": "Updated" } } }
+    },
+    "/users/{userId}/roles": {
+      "put": { "responses": { "204": { "description": "Updated" } } }
+    },
+    "/assets/app.js": {
+      "get": { "responses": { "200": { "description": "Asset" } } }
+    }
+  }
+}
