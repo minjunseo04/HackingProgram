@@ -46,16 +46,16 @@ public sealed class MainForm : Form
     {
         Text = "BoundaryCheck";
         AutoScaleMode = AutoScaleMode.Dpi;
-        MinimumSize = new Size(1000, 720);
-        Size = new Size(1240, 860);
+        MinimumSize = new Size(1000, 760);
+        Size = new Size(1280, 900);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.FromArgb(246, 248, 246);
         Font = new Font("Segoe UI", 10F);
 
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(30, 22, 30, 24) };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 222));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 116));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 90));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 288));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Controls.Add(root);
 
@@ -63,12 +63,12 @@ public sealed class MainForm : Form
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
         var brand = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
-        brand.RowStyles.Add(new RowStyle(SizeType.Percent, 58));
-        brand.RowStyles.Add(new RowStyle(SizeType.Percent, 42));
+        brand.RowStyles.Add(new RowStyle(SizeType.Percent, 62));
+        brand.RowStyles.Add(new RowStyle(SizeType.Percent, 38));
         brand.Controls.Add(new Label { Text = "BoundaryCheck", Font = new Font("Segoe UI Semibold", 23F), ForeColor = Color.FromArgb(23, 76, 55), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
         brand.Controls.Add(new Label { Text = $"v{UpdateClient.CurrentVersion()} · 앱 권한 경계 점검", ForeColor = Color.FromArgb(93, 107, 99), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
         header.Controls.Add(brand, 0, 0);
-        var headerActions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 19, 0, 0), Margin = new Padding(0) };
+        var headerActions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 34, 0, 0), Margin = new Padding(0) };
         var updateButton = Button("업데이트 확인", false);
         updateButton.Click += async (_, _) => await CheckForUpdatesAsync(updateButton);
         var localBadge = new Label { Text = "●  로컬 저장", AutoSize = true, BackColor = Color.FromArgb(229, 242, 234), ForeColor = Color.FromArgb(23, 107, 80), Padding = new Padding(12, 9, 12, 9), Margin = new Padding(0, 2, 8, 0) };
@@ -76,24 +76,25 @@ public sealed class MainForm : Form
         header.Controls.Add(headerActions, 1, 0);
         root.Controls.Add(header, 0, 0);
 
-        var privacy = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(232, 244, 238), Padding = new Padding(16, 10, 16, 10), Margin = new Padding(0, 4, 0, 8) };
+        var privacy = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(232, 244, 238), Padding = new Padding(18, 12, 18, 12), Margin = new Padding(0, 4, 0, 8) };
         var privacyCopy = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
-        privacyCopy.RowStyles.Add(new RowStyle(SizeType.Percent, 48));
-        privacyCopy.RowStyles.Add(new RowStyle(SizeType.Percent, 52));
+        privacyCopy.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        privacyCopy.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
         privacyCopy.Controls.Add(new Label { Text = "프로젝트와 가져온 파일은 이 컴퓨터에 저장됩니다", Font = new Font("Segoe UI Semibold", 10.5F), ForeColor = Color.FromArgb(23, 76, 55), Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
-        privacyCopy.Controls.Add(new Label { Text = "업데이트 확인을 누르면 GitHub에 접속하며 IP 주소와 앱 버전이 전달될 수 있습니다. 프로젝트 자료는 전송하지 않습니다.", ForeColor = Color.FromArgb(70, 91, 79), Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft }, 0, 1);
+        privacyCopy.Controls.Add(new Label { Text = "업데이트 확인은 직접 눌러야 시작됩니다. GitHub는 IP와 앱 버전을 볼 수 있지만 프로젝트 자료는 전송되지 않습니다.", ForeColor = Color.FromArgb(70, 91, 79), Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft }, 0, 1);
         privacy.Controls.Add(privacyCopy);
         root.Controls.Add(privacy, 0, 1);
 
         var project = Card();
-        var projectGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 4, Padding = new Padding(20, 12, 20, 14), Margin = new Padding(0) };
-        projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 112));
+        var projectGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 5, Padding = new Padding(20, 12, 20, 14), Margin = new Padding(0) };
+        projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
         projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 112));
+        projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
         projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
-        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
-        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));
+        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));
+        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
         projectGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         projectGrid.Controls.Add(new Label { Text = "프로젝트 설정", Font = new Font("Segoe UI Semibold", 12F), ForeColor = Color.FromArgb(34, 54, 43), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
         projectGrid.SetColumnSpan(projectGrid.GetControlFromPosition(0, 0)!, 4);
@@ -103,10 +104,10 @@ public sealed class MainForm : Form
         projectGrid.Controls.Add(StyleInput(_origin), 3, 1);
         projectGrid.Controls.Add(FieldLabel("API 경로"), 0, 2);
         projectGrid.Controls.Add(StyleInput(_prefix), 1, 2);
-        var hint = new Label { Text = "승인된 테스트 환경만 입력하세요. 현재 버전은 파일을 읽어 초안을 만들 뿐 서버에 연결하지 않습니다.", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(93, 107, 99), TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0) };
-        projectGrid.Controls.Add(hint, 2, 2);
-        projectGrid.SetColumnSpan(hint, 2);
-        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Padding = new Padding(0, 7, 0, 0), Margin = new Padding(0) };
+        var hint = new Label { Text = "현재 버전은 가져온 파일만 읽고 API 서버에는 연결하지 않습니다.", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(93, 107, 99), TextAlign = ContentAlignment.MiddleLeft };
+        projectGrid.Controls.Add(hint, 0, 3);
+        projectGrid.SetColumnSpan(hint, 4);
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Padding = new Padding(0, 8, 0, 0), Margin = new Padding(0) };
         var harButton = Button("HAR 가져오기", false);
         harButton.Click += (_, _) => ImportFile(true);
         var openApiButton = Button("OpenAPI 가져오기", false);
@@ -114,7 +115,7 @@ public sealed class MainForm : Form
         var saveButton = Button("프로젝트 저장", true);
         saveButton.Click += (_, _) => SaveProject(showMessage: true);
         actions.Controls.AddRange([harButton, openApiButton, saveButton]);
-        projectGrid.Controls.Add(actions, 0, 3);
+        projectGrid.Controls.Add(actions, 0, 4);
         projectGrid.SetColumnSpan(actions, 4);
         project.Controls.Add(projectGrid);
         root.Controls.Add(project, 0, 2);

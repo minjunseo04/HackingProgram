@@ -38,7 +38,7 @@ internal static class UpdateClient
         var tag = root.GetProperty("tag_name").GetString() ?? "";
         var versionMatch = System.Text.RegularExpressions.Regex.Match(tag, @"^v(?<version>\d+\.\d+\.\d+)$");
         if (!versionMatch.Success || !Version.TryParse(versionMatch.Groups["version"].Value, out var version))
-            throw new InvalidDataException("GitHub 릴리스 버전 태그가 0.1.2 형식이 아닙니다.");
+            throw new InvalidDataException("GitHub 릴리스 버전 태그가 v0.1.3 형식이 아닙니다.");
 
         var assets = root.GetProperty("assets").EnumerateArray()
             .Select(asset => new ReleaseAsset(

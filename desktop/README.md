@@ -1,12 +1,12 @@
 # BoundaryCheck Windows desktop app
 
-현재 버전: **0.1.2**
+현재 버전: **0.1.3**
 
 ## 실행
 
 GitHub Releases에서 `BoundaryCheck-win-x64.zip`을 받아 압축을 풀고 `BoundaryCheck.exe`를 실행합니다. Windows x64용 자체 포함 파일이라 별도 .NET 설치가 필요하지 않습니다.
 
-## v0.1.2 기능
+## v0.1.3 기능
 
 - 프로젝트 이름, 대상 origin, API 경로 저장
 - HAR 또는 OpenAPI 3.0/3.1 JSON에서 GET/PATCH 요청 경로 가져오기
@@ -21,7 +21,7 @@ GitHub Releases에서 `BoundaryCheck-win-x64.zip`을 받아 압축을 풀고 `Bo
 
 ## 소스에서 빌드
 
-새 버전은 `v0.1.3`처럼 버전을 올리고 태그를 push하면 GitHub Actions가 릴리스 파일을 만듭니다. 앱은 사용자가 **업데이트 확인**을 누른 경우에만 이 저장소의 최신 Release를 확인합니다. GitHub 릴리스 자산의 SHA-256 digest와 다운로드 파일을 대조하고, 성공한 경우에만 현재 폴더의 실행 파일을 교체합니다.
+새 버전은 `v0.1.4`처럼 버전을 올리고 태그를 push하면 GitHub Actions가 릴리스 파일을 만듭니다. 앱은 사용자가 **업데이트 확인**을 누른 경우에만 이 저장소의 최신 Release를 확인합니다. GitHub 릴리스 자산의 SHA-256 digest와 다운로드 파일을 대조하고, 성공한 경우에만 현재 폴더의 실행 파일을 교체합니다. 압축을 푼 프로그램 폴더에 쓰기 권한이 필요합니다.
 
 `.NET 10 Windows Desktop SDK`가 필요합니다.
 
