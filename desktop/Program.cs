@@ -1,5 +1,5 @@
 using System.ComponentModel;
-using System.Net;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -66,21 +66,22 @@ public sealed class MainForm : Form
         brand.RowStyles.Add(new RowStyle(SizeType.Percent, 58));
         brand.RowStyles.Add(new RowStyle(SizeType.Percent, 42));
         brand.Controls.Add(new Label { Text = "BoundaryCheck", Font = new Font("Segoe UI Semibold", 23F), ForeColor = Color.FromArgb(23, 76, 55), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
-        brand.Controls.Add(new Label { Text = "앱의 사용자와 역할 사이 접근 규칙을 정리합니다", ForeColor = Color.FromArgb(93, 107, 99), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
+        brand.Controls.Add(new Label { Text = $"v{UpdateClient.CurrentVersion()} · 앱 권한 경계 점검", ForeColor = Color.FromArgb(93, 107, 99), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
         header.Controls.Add(brand, 0, 0);
-        var badgeHost = new Panel { Dock = DockStyle.Fill };
-        var localBadge = new Label { Text = "●  PC 안에서만 처리", AutoSize = true, BackColor = Color.FromArgb(229, 242, 234), ForeColor = Color.FromArgb(23, 107, 80), Padding = new Padding(12, 8, 12, 8), Anchor = AnchorStyles.Right };
-        badgeHost.Controls.Add(localBadge);
-        badgeHost.Resize += (_, _) => localBadge.Location = new Point(Math.Max(0, badgeHost.ClientSize.Width - localBadge.Width), (badgeHost.ClientSize.Height - localBadge.Height) / 2);
-        header.Controls.Add(badgeHost, 1, 0);
+        var headerActions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 19, 0, 0), Margin = new Padding(0) };
+        var updateButton = Button("업데이트 확인", false);
+        updateButton.Click += async (_, _) => await CheckForUpdatesAsync(updateButton);
+        var localBadge = new Label { Text = "●  로컬 저장", AutoSize = true, BackColor = Color.FromArgb(229, 242, 234), ForeColor = Color.FromArgb(23, 107, 80), Padding = new Padding(12, 9, 12, 9), Margin = new Padding(0, 2, 8, 0) };
+        headerActions.Controls.AddRange([updateButton, localBadge]);
+        header.Controls.Add(headerActions, 1, 0);
         root.Controls.Add(header, 0, 0);
 
         var privacy = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(232, 244, 238), Padding = new Padding(16, 10, 16, 10), Margin = new Padding(0, 4, 0, 8) };
         var privacyCopy = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
         privacyCopy.RowStyles.Add(new RowStyle(SizeType.Percent, 48));
         privacyCopy.RowStyles.Add(new RowStyle(SizeType.Percent, 52));
-        privacyCopy.Controls.Add(new Label { Text = "내 프로젝트 자료는 이 컴퓨터에 저장됩니다", Font = new Font("Segoe UI Semibold", 10.5F), ForeColor = Color.FromArgb(23, 76, 55), Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
-        privacyCopy.Controls.Add(new Label { Text = "현재 버전은 사용 정보를 수집하거나 서버로 보내지 않습니다. API 요청도 실행하지 않습니다.", ForeColor = Color.FromArgb(70, 91, 79), Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft }, 0, 1);
+        privacyCopy.Controls.Add(new Label { Text = "프로젝트와 가져온 파일은 이 컴퓨터에 저장됩니다", Font = new Font("Segoe UI Semibold", 10.5F), ForeColor = Color.FromArgb(23, 76, 55), Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
+        privacyCopy.Controls.Add(new Label { Text = "업데이트 확인을 누르면 GitHub에 접속하며 IP 주소와 앱 버전이 전달될 수 있습니다. 프로젝트 자료는 전송하지 않습니다.", ForeColor = Color.FromArgb(70, 91, 79), Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft }, 0, 1);
         privacy.Controls.Add(privacyCopy);
         root.Controls.Add(privacy, 0, 1);
 
@@ -150,6 +151,102 @@ public sealed class MainForm : Form
     }
 
     private readonly Label _emptyState = new();
+
+    private async Task CheckForUpdatesAsync(Button button)
+    {
+        var approval = MessageBox.Show(
+            this,
+            "업데이트를 확인하면 GitHub에 연결됩니다. GitHub는 요청에 사용된 IP 주소와 앱 버전을 볼 수 있습니다. 프로젝트 이름, 대상 주소, 요청 목록은 보내지 않습니다.\n\n지금 업데이트를 확인할까요?",
+            "업데이트 연결 안내",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Information);
+        if (approval != DialogResult.Yes) return;
+
+        button.Enabled = false;
+        var originalText = button.Text;
+        try
+        {
+            button.Text = "버전 확인 중…";
+            var latest = await UpdateClient.FindLatestAsync();
+            if (latest is null)
+            {
+                MessageBox.Show(this, "아직 공개된 업데이트가 없습니다.", "업데이트 확인", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var current = UpdateClient.CurrentVersion();
+            var currentComparable = new Version(current.Major, Math.Max(0, current.Minor), Math.Max(0, current.Build));
+            if (latest.Version <= currentComparable)
+            {
+                MessageBox.Show(this, $"현재 버전(v{currentComparable})이 최신입니다.", "업데이트 확인", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var releaseNotes = string.IsNullOrWhiteSpace(latest.Notes) ? "변경 내역이 등록되지 않았습니다." : latest.Notes.Trim();
+            if (releaseNotes.Length > 900) releaseNotes = releaseNotes[..900] + "…";
+            var installDirectory = AppContext.BaseDirectory;
+            var helper = Path.Combine(installDirectory, "apply-update.ps1");
+            if (!File.Exists(helper)) throw new InvalidOperationException("이 프로그램에는 업데이트 도우미가 없습니다. 웹사이트에서 최신 설치 파일을 다시 받아 주세요.");
+            EnsureInstallDirectoryWritable(installDirectory);
+
+            var install = MessageBox.Show(
+                this,
+                $"새 버전 v{latest.Version}을(를) 찾았습니다.\n현재 버전: v{currentComparable}\n\n변경 내용:\n{releaseNotes}\n\n업데이트 파일을 확인하고 설치할까요?",
+                "업데이트 가능",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+            if (install != DialogResult.Yes) return;
+
+            var progress = new Progress<int>(percent => button.Text = $"다운로드 {percent}%");
+            var archivePath = await UpdateClient.DownloadVerifiedPackageAsync(latest, progress);
+            button.Text = "교체 준비 중…";
+
+            var startInfo = new ProcessStartInfo("powershell.exe")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+            };
+            startInfo.ArgumentList.Add("-NoProfile");
+            startInfo.ArgumentList.Add("-NonInteractive");
+            startInfo.ArgumentList.Add("-ExecutionPolicy");
+            startInfo.ArgumentList.Add("Bypass");
+            startInfo.ArgumentList.Add("-File");
+            startInfo.ArgumentList.Add(helper);
+            startInfo.ArgumentList.Add("-ParentPid");
+            startInfo.ArgumentList.Add(Environment.ProcessId.ToString());
+            startInfo.ArgumentList.Add("-ArchivePath");
+            startInfo.ArgumentList.Add(archivePath);
+            startInfo.ArgumentList.Add("-InstallDirectory");
+            startInfo.ArgumentList.Add(installDirectory);
+            startInfo.ArgumentList.Add("-ExpectedSha256");
+            startInfo.ArgumentList.Add(latest.Package.Digest!["sha256:".Length..]);
+            if (Process.Start(startInfo) is null) throw new InvalidOperationException("업데이트 도우미를 시작하지 못했습니다.");
+
+            MessageBox.Show(this, "파일 확인이 끝났습니다. 프로그램을 닫으면 업데이트한 뒤 다시 실행합니다.", "업데이트 준비 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Close();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"업데이트를 완료하지 못했습니다.\n\n{ex.Message}", "업데이트 실패", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        finally
+        {
+            if (!IsDisposed)
+            {
+                button.Enabled = true;
+                button.Text = originalText;
+            }
+        }
+    }
+
+    private static void EnsureInstallDirectoryWritable(string directory)
+    {
+        var probe = Path.Combine(directory, $".boundarycheck-write-{Guid.NewGuid():N}.tmp");
+        try { File.WriteAllText(probe, "update permission check"); }
+        catch (UnauthorizedAccessException) { throw new InvalidOperationException("앱 폴더에 쓸 권한이 없습니다. ZIP을 사용자 폴더(예: 문서)에 풀어 다시 실행해 주세요."); }
+        finally { if (File.Exists(probe)) File.Delete(probe); }
+    }
 
     private static Panel Card() => new() { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1), Margin = new Padding(0, 4, 0, 4) };
     private static Label FieldLabel(string text) => new() { Text = text, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Color.FromArgb(54, 68, 60), Font = new Font("Segoe UI", 9.5F) };

@@ -8,7 +8,7 @@
 - 초기 문제 범위는 다중 사용자·역할·조직 사이의 접근 경계입니다(IDOR/BOLA, 역할 상승, 테넌트 간 접근).
 - PoC는 `127.0.0.1`의 샘플 API만 다룹니다. 외부 호스트를 검사하지 않습니다.
 - 기본 실행은 읽기 요청만 허용합니다. PATCH는 loopback fixture에서 여러 명시적 허용 단계가 있어야 전송합니다.
-- 프로그램 v0.1.1은 HAR/OpenAPI JSON 가져오기, 요청 초안 정리, 기대 접근값 편집과 로컬 저장을 지원합니다. 실제 요청 실행은 아직 포함하지 않습니다.
+- 프로그램 v0.1.2는 HAR/OpenAPI JSON 가져오기, 요청 초안 정리, 기대 접근값 편집, 로컬 저장과 GitHub Releases 업데이트를 지원합니다. 실제 요청 실행은 아직 포함하지 않습니다.
 - AI 페르소나 검토는 가설 점검이지 고객 수요나 지불 의사 검증이 아닙니다. 제작자·학생 사용자 테스트와 사업성 검증은 구분합니다.
 
 ## 현재 구성
@@ -26,4 +26,4 @@
 
 데스크톱 프로그램은 .NET 10 Windows Desktop SDK로 빌드합니다. 웹사이트 파일은 `website/index.html`입니다. 배포용 ZIP은 `powershell -ExecutionPolicy Bypass -File .\desktop\publish.ps1`로 생성하며, 빌드 산출물은 Git 이력에 넣지 않습니다.
 
-로컬 Windows 패키지는 [`website/downloads/BoundaryCheck-win-x64.zip`](website/downloads/BoundaryCheck-win-x64.zip)입니다. 웹사이트를 배포할 때는 이 ZIP도 다운로드 위치에 함께 올려야 합니다.
+GitHub 저장소에 `v*.*.*` 태그를 올리면 Actions가 Windows 패키지를 빌드해 Release에 게시합니다. [최신 Windows 다운로드](https://github.com/minjunseo04/HackingProgram/releases/latest/download/BoundaryCheck-win-x64.zip).

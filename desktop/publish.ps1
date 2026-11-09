@@ -5,6 +5,7 @@ $downloadFolder = Join-Path $projectRoot 'website\downloads'
 $publishFolder = Join-Path $downloadFolder 'publish'
 $zipFile = Join-Path $downloadFolder 'BoundaryCheck-win-x64.zip'
 $packageReadme = Join-Path $downloadFolder 'README.txt'
+$updateHelper = Join-Path $downloadFolder 'apply-update.ps1'
 
 $env:DOTNET_CLI_HOME = Join-Path $projectRoot '.dotnet-cli'
 $env:NUGET_PACKAGES = Join-Path $projectRoot '.nuget\packages'
@@ -16,5 +17,6 @@ dotnet publish $projectFile --configuration Release --runtime win-x64 --self-con
 if ($LASTEXITCODE -ne 0) { throw 'Desktop app publish failed.' }
 
 Copy-Item (Join-Path $PSScriptRoot 'README.md') $packageReadme -Force
-Compress-Archive -Path (Join-Path $publishFolder 'BoundaryCheck.exe'), $packageReadme -DestinationPath $zipFile -Force
+Copy-Item (Join-Path $PSScriptRoot 'apply-update.ps1') $updateHelper -Force
+Compress-Archive -Path (Join-Path $publishFolder 'BoundaryCheck.exe'), $packageReadme, $updateHelper -DestinationPath $zipFile -Force
 Write-Output "Created $zipFile"
