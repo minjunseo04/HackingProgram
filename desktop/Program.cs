@@ -19,8 +19,17 @@ public sealed class Scenario
 {
     public string Method { get; set; } = "GET";
     public string Path { get; set; } = "/";
+    public string IdentityId { get; set; } = "";
     public string Expectation { get; set; } = "미지정";
     public int Occurrences { get; set; } = 1;
+}
+
+public sealed class TestIdentity
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string Name { get; set; } = "";
+    public string Organization { get; set; } = "";
+    public string Role { get; set; } = "";
 }
 
 public sealed class ProjectFile
@@ -28,6 +37,7 @@ public sealed class ProjectFile
     public string Name { get; set; } = "내 첫 프로젝트";
     public string Origin { get; set; } = "https://app.example.test";
     public string Prefix { get; set; } = "/api/";
+    public List<TestIdentity> Identities { get; set; } = [];
     public List<Scenario> Scenarios { get; set; } = [];
 }
 
@@ -38,6 +48,7 @@ public sealed class MainForm : Form
     private readonly TextBox _name = new() { Text = "내 첫 프로젝트" };
     private readonly TextBox _origin = new() { Text = "https://app.example.test" };
     private readonly TextBox _prefix = new() { Text = "/api/" };
+    private readonly List<TestIdentity> _identities = [];
     private readonly BindingList<Scenario> _scenarios = [];
     private readonly DataGridView _grid = new();
     private readonly Label _summary = new();
@@ -104,7 +115,7 @@ public sealed class MainForm : Form
         projectGrid.Controls.Add(StyleInput(_origin), 3, 1);
         projectGrid.Controls.Add(FieldLabel("API 경로"), 0, 2);
         projectGrid.Controls.Add(StyleInput(_prefix), 1, 2);
-        var hint = new Label { Text = "현재 버전은 가져온 파일만 읽고 API 서버에는 연결하지 않습니다.", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(93, 107, 99), TextAlign = ContentAlignment.MiddleLeft };
+        var hint = new Label { Text = "요청을 테스트 신원별로 나눠 기대 접근값을 기록합니다. API 서버에는 연결하지 않습니다.", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(93, 107, 99), TextAlign = ContentAlignment.MiddleLeft };
         projectGrid.Controls.Add(hint, 0, 3);
         projectGrid.SetColumnSpan(hint, 4);
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Padding = new Padding(0, 8, 0, 0), Margin = new Padding(0) };
@@ -125,19 +136,27 @@ public sealed class MainForm : Form
         scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
         scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
-        var scenarioHeader = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
+        var scenarioHeader = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 1, Margin = new Padding(0) };
         scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         scenarioHeader.Controls.Add(new Label { Text = "요청 목록", Font = new Font("Segoe UI Semibold", 14F), ForeColor = Color.FromArgb(34, 54, 43), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        var identityButton = Button("테스트 신원 관리", false);
+        identityButton.Click += (_, _) => ManageIdentities();
+        scenarioHeader.Controls.Add(identityButton, 1, 0);
+        var duplicateButton = Button("선택 요청 복제", false);
+        duplicateButton.Click += (_, _) => DuplicateSelectedScenario();
+        scenarioHeader.Controls.Add(duplicateButton, 2, 0);
         var addButton = Button("요청 직접 추가", false);
         addButton.Click += (_, _) => { _scenarios.Add(new Scenario()); UpdateSummary(); SaveProject(false); };
-        scenarioHeader.Controls.Add(addButton, 1, 0);
+        scenarioHeader.Controls.Add(addButton, 3, 0);
         scenarioLayout.Controls.Add(scenarioHeader, 0, 0);
 
         ConfigureGrid();
         var scenarioBody = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Margin = new Padding(0) };
         scenarioBody.Controls.Add(_grid);
-        var emptyState = new Label { Text = "아직 요청이 없어요\nHAR 또는 OpenAPI 파일을 가져와 첫 요청 목록을 만들어 보세요", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, ForeColor = Color.FromArgb(93, 107, 99), Font = new Font("Segoe UI", 12F), BackColor = Color.White };
+        var emptyState = new Label { Text = "아직 요청이 없어요\nHAR 또는 OpenAPI 파일을 가져와 첫 요청 목록을 만들어 보세요\n테스트 신원은 먼저 만들거나 나중에 연결할 수 있어요", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, ForeColor = Color.FromArgb(93, 107, 99), Font = new Font("Segoe UI", 12F), BackColor = Color.White };
         scenarioBody.Controls.Add(emptyState);
         _emptyState = emptyState;
         scenarioLayout.Controls.Add(scenarioBody, 0, 1);
@@ -253,7 +272,7 @@ public sealed class MainForm : Form
     private static Label FieldLabel(string text) => new() { Text = text, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Color.FromArgb(54, 68, 60), Font = new Font("Segoe UI", 9.5F) };
     private static TextBox StyleInput(TextBox input) { input.Dock = DockStyle.Fill; input.Margin = new Padding(2, 5, 12, 5); input.BorderStyle = BorderStyle.FixedSingle; input.BackColor = Color.FromArgb(251, 252, 251); return input; }
 
-    private static Button Button(string text, bool primary)
+    internal static Button Button(string text, bool primary)
     {
         var button = new Button { Text = text, AutoSize = true, Height = 40, FlatStyle = FlatStyle.Flat, Padding = new Padding(14, 3, 14, 3), Margin = new Padding(0, 0, 10, 0), Cursor = Cursors.Hand, Font = new Font("Segoe UI Semibold", 9.5F) };
         button.FlatAppearance.BorderSize = primary ? 0 : 1;
@@ -282,10 +301,20 @@ public sealed class MainForm : Form
         _grid.DefaultCellStyle.SelectionForeColor = Color.FromArgb(23, 76, 55);
         _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Method), HeaderText = "방식", Width = 110, ReadOnly = true });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Path), HeaderText = "요청 경로", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
+        _grid.Columns.Add(new DataGridViewComboBoxColumn
+        {
+            Name = "Identity",
+            DataPropertyName = nameof(Scenario.IdentityId),
+            HeaderText = "테스트 신원",
+            Width = 220,
+            DataSource = IdentityChoicesForProject(),
+            ValueMember = nameof(IdentityChoice.Id),
+            DisplayMember = nameof(IdentityChoice.Label),
+        });
         _grid.Columns.Add(new DataGridViewComboBoxColumn { DataPropertyName = nameof(Scenario.Expectation), HeaderText = "기대 접근", Width = 165, DataSource = new[] { "미지정", "허용", "거부" } });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Occurrences), HeaderText = "발견 횟수", Width = 125, ReadOnly = true });
         _grid.DataSource = _scenarios;
-        _grid.CellValueChanged += (_, _) => SaveProject(false);
+        _grid.CellValueChanged += (_, _) => { UpdateSummary(); SaveProject(false); };
         _grid.CurrentCellDirtyStateChanged += (_, _) => { if (_grid.IsCurrentCellDirty) _grid.CommitEdit(DataGridViewDataErrorContexts.Commit); };
         _grid.DataError += (_, e) => { e.ThrowException = false; };
     }
@@ -395,24 +424,88 @@ public sealed class MainForm : Form
 
     private static List<Scenario> Deduplicate(IEnumerable<Scenario> scenarios)
     {
-        return scenarios.GroupBy(s => $"{s.Method} {s.Path}", StringComparer.Ordinal)
-            .Select(g => new Scenario { Method = g.First().Method, Path = g.First().Path, Occurrences = g.Sum(s => s.Occurrences) })
+        return scenarios.GroupBy(s => $"{s.Method} {s.Path} {s.IdentityId}", StringComparer.Ordinal)
+            .Select(g => new Scenario { Method = g.First().Method, Path = g.First().Path, IdentityId = g.First().IdentityId, Occurrences = g.Sum(s => s.Occurrences) })
             .ToList();
     }
 
     private void MergeScenario(Scenario incoming)
     {
-        var existing = _scenarios.FirstOrDefault(s => s.Method == incoming.Method && s.Path == incoming.Path);
+        var existing = _scenarios.FirstOrDefault(s => s.Method == incoming.Method && s.Path == incoming.Path && s.IdentityId == incoming.IdentityId);
         if (existing is null) _scenarios.Add(incoming);
         else existing.Occurrences += incoming.Occurrences;
     }
+
+    private void DuplicateSelectedScenario()
+    {
+        if (_grid.CurrentRow?.DataBoundItem is not Scenario selected)
+        {
+            MessageBox.Show(this, "복제할 요청을 먼저 선택해 주세요.", "요청 선택", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var duplicate = new Scenario
+        {
+            Method = selected.Method,
+            Path = selected.Path,
+            IdentityId = "",
+            Expectation = "미지정",
+            Occurrences = selected.Occurrences,
+        };
+        _scenarios.Add(duplicate);
+        UpdateSummary();
+        SaveProject(false);
+        var row = _scenarios.IndexOf(duplicate);
+        if (row >= 0 && row < _grid.Rows.Count) _grid.CurrentCell = _grid.Rows[row].Cells[0];
+    }
+
+    private void RefreshIdentityChoices()
+    {
+        if (_grid.Columns["Identity"] is not DataGridViewComboBoxColumn column) return;
+        column.DataSource = IdentityChoicesForProject();
+    }
+
+    private List<IdentityChoice> IdentityChoicesForProject() =>
+        [new IdentityChoice("", "신원 미지정"), .. _identities.Select(identity => new IdentityChoice(identity.Id, FormatIdentity(identity)))];
+
+    private static string FormatIdentity(TestIdentity identity) =>
+        string.Join(" · ", new[] { identity.Name, identity.Organization, identity.Role }.Where(part => !string.IsNullOrWhiteSpace(part)));
+
+    private void ManageIdentities()
+    {
+        _grid.EndEdit();
+        using var dialog = new TestIdentityDialog(_identities);
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+        var retainedIds = dialog.Identities.Select(identity => identity.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (var scenario in _scenarios.Where(scenario => !string.IsNullOrEmpty(scenario.IdentityId) && !retainedIds.Contains(scenario.IdentityId)))
+        {
+            scenario.IdentityId = "";
+            scenario.Expectation = "미지정";
+        }
+
+        _identities.Clear();
+        _identities.AddRange(dialog.Identities.Select(CloneIdentity));
+        RefreshIdentityChoices();
+        _grid.Refresh();
+        UpdateSummary();
+        SaveProject(false);
+    }
+
+    private static TestIdentity CloneIdentity(TestIdentity identity) => new()
+    {
+        Id = identity.Id,
+        Name = identity.Name,
+        Organization = identity.Organization,
+        Role = identity.Role,
+    };
 
     private void SaveProject(bool showMessage)
     {
         try
         {
             Directory.CreateDirectory(DataDirectory);
-            var project = new ProjectFile { Name = _name.Text.Trim(), Origin = _origin.Text.Trim(), Prefix = _prefix.Text.Trim(), Scenarios = _scenarios.ToList() };
+            var project = new ProjectFile { Name = _name.Text.Trim(), Origin = _origin.Text.Trim(), Prefix = _prefix.Text.Trim(), Identities = _identities.Select(CloneIdentity).ToList(), Scenarios = _scenarios.ToList() };
             File.WriteAllText(DataFile, JsonSerializer.Serialize(project, new JsonSerializerOptions { WriteIndented = true }));
             UpdateSummary();
             if (showMessage) MessageBox.Show(this, $"프로젝트를 이 PC에 저장했습니다.\n{DataFile}", "저장 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -430,11 +523,18 @@ public sealed class MainForm : Form
                 if (project is not null)
                 {
                     _name.Text = project.Name; _origin.Text = project.Origin; _prefix.Text = project.Prefix;
-                    foreach (var item in project.Scenarios) _scenarios.Add(item);
+                    _identities.AddRange((project.Identities ?? []).Where(identity => !string.IsNullOrWhiteSpace(identity.Id)).Select(CloneIdentity));
+                    var identityIds = _identities.Select(identity => identity.Id).ToHashSet(StringComparer.Ordinal);
+                    foreach (var item in project.Scenarios ?? [])
+                    {
+                        if (!string.IsNullOrEmpty(item.IdentityId) && !identityIds.Contains(item.IdentityId)) item.IdentityId = "";
+                        _scenarios.Add(item);
+                    }
                 }
             }
         }
         catch { /* Keep the clean starter workspace if a saved file is unreadable. */ }
+        RefreshIdentityChoices();
         UpdateSummary();
     }
 
@@ -442,6 +542,206 @@ public sealed class MainForm : Form
     {
         _emptyState.Visible = _scenarios.Count == 0;
         _grid.Visible = _scenarios.Count > 0;
-        _summary.Text = $"{_scenarios.Count}개 요청 · 기대 접근값 {_scenarios.Count(s => s.Expectation != "미지정")}개 지정 · 자료는 이 PC에 저장";
+        var assigned = _scenarios.Count(s => !string.IsNullOrEmpty(s.IdentityId));
+        var specified = _scenarios.Count(s => s.Expectation != "미지정");
+        _summary.Text = $"요청 {_scenarios.Count}개 · 테스트 신원 {_identities.Count}개 · 신원 연결 {assigned}개 · 기대 접근값 지정 {specified}개 · 자료는 이 PC에 저장";
     }
+
+    private sealed record IdentityChoice(string Id, string Label);
+}
+
+internal sealed class TestIdentityDialog : Form
+{
+    private readonly ListBox _list = new() { Dock = DockStyle.Fill, FormattingEnabled = true };
+    private readonly TextBox _name = new();
+    private readonly TextBox _organization = new();
+    private readonly TextBox _role = new();
+    private readonly List<TestIdentity> _working;
+
+    public IReadOnlyList<TestIdentity> Identities => _working;
+
+    public TestIdentityDialog(IEnumerable<TestIdentity> identities)
+    {
+        _working = identities.Select(identity => new TestIdentity
+        {
+            Id = identity.Id,
+            Name = identity.Name,
+            Organization = identity.Organization,
+            Role = identity.Role,
+        }).ToList();
+
+        Text = "테스트 신원 관리";
+        AutoScaleMode = AutoScaleMode.Dpi;
+        MinimumSize = new Size(680, 500);
+        Size = new Size(760, 560);
+        StartPosition = FormStartPosition.CenterParent;
+        BackColor = Color.FromArgb(246, 248, 246);
+        Font = new Font("Segoe UI", 10F);
+
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, Padding = new Padding(22), BackColor = Color.White };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        Controls.Add(layout);
+
+        var title = new Label { Text = "테스트 신원", Font = new Font("Segoe UI Semibold", 15F), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Color.FromArgb(23, 76, 55) };
+        layout.Controls.Add(title, 0, 0);
+        layout.SetColumnSpan(title, 2);
+
+        _list.Format += (_, args) =>
+        {
+            if (args.ListItem is TestIdentity identity) args.Value = string.IsNullOrWhiteSpace(FormatIdentity(identity)) ? "이름 없는 신원" : FormatIdentity(identity);
+        };
+        _list.SelectedIndexChanged += (_, _) => LoadSelection();
+        layout.Controls.Add(_list, 0, 1);
+
+        var fields = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, Padding = new Padding(16, 0, 0, 0) };
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (var row = 0; row < 3; row++) fields.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
+        fields.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        AddField(fields, "이름", _name, 0);
+        AddField(fields, "조직", _organization, 1);
+        AddField(fields, "역할", _role, 2);
+        var privacy = new Label
+        {
+            Text = "이 버전은 이름·조직·역할만 관리합니다. 로그인 비밀번호, 토큰 등 인증 정보는 입력하거나 저장하지 않습니다. 신원을 삭제하면 연결된 요청의 신원과 기대 접근값이 미지정으로 돌아갑니다.",
+            Dock = DockStyle.Fill,
+            ForeColor = Color.FromArgb(93, 107, 99),
+            TextAlign = ContentAlignment.TopLeft,
+        };
+        fields.Controls.Add(privacy, 0, 3);
+        fields.SetColumnSpan(privacy, 2);
+        layout.Controls.Add(fields, 1, 1);
+
+        var editActions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(0, 8, 0, 0) };
+        var newButton = MainForm.Button("새 신원", false);
+        newButton.Click += (_, _) => ClearForNewIdentity();
+        var addButton = MainForm.Button("신원 추가", false);
+        addButton.Click += (_, _) => AddIdentity();
+        var saveButton = MainForm.Button("선택 신원 저장", false);
+        saveButton.Click += (_, _) => SaveSelection();
+        var deleteButton = MainForm.Button("선택 신원 삭제", false);
+        deleteButton.Click += (_, _) => DeleteSelection();
+        editActions.Controls.AddRange([newButton, addButton, saveButton, deleteButton]);
+        layout.Controls.Add(editActions, 0, 2);
+        layout.SetColumnSpan(editActions, 2);
+
+        var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 8, 0, 0) };
+        var applyButton = MainForm.Button("변경 적용", true);
+        applyButton.Click += (_, _) => ApplyChanges();
+        var cancelButton = MainForm.Button("취소", false);
+        cancelButton.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
+        footer.Controls.AddRange([applyButton, cancelButton]);
+        layout.Controls.Add(footer, 0, 3);
+        layout.SetColumnSpan(footer, 2);
+
+        RefreshList();
+    }
+
+    private static void AddField(TableLayoutPanel fields, string label, TextBox input, int row)
+    {
+        fields.Controls.Add(new Label { Text = label, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Color.FromArgb(54, 68, 60) }, 0, row);
+        input.Dock = DockStyle.Fill;
+        input.Margin = new Padding(2, 7, 2, 7);
+        fields.Controls.Add(input, 1, row);
+    }
+
+    private void ClearForNewIdentity()
+    {
+        if (_list.SelectedItem is TestIdentity selected)
+        {
+            if (!TryReadFields(out var name, out var organization, out var role)) return;
+            selected.Name = name;
+            selected.Organization = organization;
+            selected.Role = role;
+        }
+        _list.ClearSelected();
+        _name.Clear();
+        _organization.Clear();
+        _role.Clear();
+        _name.Focus();
+    }
+
+    private bool AddIdentity()
+    {
+        if (!TryReadFields(out var name, out var organization, out var role)) return false;
+        var identity = new TestIdentity { Name = name, Organization = organization, Role = role };
+        _working.Add(identity);
+        RefreshList(identity);
+        return true;
+    }
+
+    private void SaveSelection()
+    {
+        if (_list.SelectedItem is not TestIdentity identity) return;
+        if (!TryReadFields(out var name, out var organization, out var role)) return;
+        identity.Name = name;
+        identity.Organization = organization;
+        identity.Role = role;
+        RefreshList(identity);
+    }
+
+    private void ApplyChanges()
+    {
+        if (_list.SelectedItem is TestIdentity identity)
+        {
+            if (!TryReadFields(out var name, out var organization, out var role)) return;
+            identity.Name = name;
+            identity.Organization = organization;
+            identity.Role = role;
+        }
+        else if (!string.IsNullOrWhiteSpace(_name.Text) || !string.IsNullOrWhiteSpace(_organization.Text) || !string.IsNullOrWhiteSpace(_role.Text))
+        {
+            if (!AddIdentity()) return;
+        }
+        DialogResult = DialogResult.OK;
+        Close();
+    }
+
+    private void DeleteSelection()
+    {
+        if (_list.SelectedItem is not TestIdentity identity) return;
+        var index = _list.SelectedIndex;
+        _working.Remove(identity);
+        RefreshList(_working.Count == 0 ? null : _working[Math.Min(index, _working.Count - 1)]);
+    }
+
+    private bool TryReadFields(out string name, out string organization, out string role)
+    {
+        name = _name.Text.Trim();
+        organization = _organization.Text.Trim();
+        role = _role.Text.Trim();
+        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(organization) || string.IsNullOrWhiteSpace(role))
+        {
+            MessageBox.Show(this, "이름, 조직, 역할을 모두 입력해 주세요.", "입력 확인", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return false;
+        }
+        return true;
+    }
+
+    private void RefreshList(TestIdentity? selected = null)
+    {
+        _list.BeginUpdate();
+        _list.Items.Clear();
+        foreach (var identity in _working) _list.Items.Add(identity);
+        _list.EndUpdate();
+        if (selected is not null) _list.SelectedItem = selected;
+        else if (_list.Items.Count > 0) _list.SelectedIndex = 0;
+        else { _name.Clear(); _organization.Clear(); _role.Clear(); }
+    }
+
+    private void LoadSelection()
+    {
+        if (_list.SelectedItem is not TestIdentity identity) return;
+        _name.Text = identity.Name;
+        _organization.Text = identity.Organization;
+        _role.Text = identity.Role;
+    }
+
+    private static string FormatIdentity(TestIdentity identity) =>
+        string.Join(" · ", new[] { identity.Name, identity.Organization, identity.Role }.Where(part => !string.IsNullOrWhiteSpace(part)));
 }
