@@ -45,43 +45,67 @@ public sealed class MainForm : Form
     public MainForm()
     {
         Text = "BoundaryCheck";
-        MinimumSize = new Size(900, 650);
-        Size = new Size(1120, 780);
+        AutoScaleMode = AutoScaleMode.Dpi;
+        MinimumSize = new Size(1000, 720);
+        Size = new Size(1240, 860);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.FromArgb(246, 248, 246);
         Font = new Font("Segoe UI", 10F);
 
-        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(28, 20, 28, 22) };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 184));
+        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(30, 22, 30, 24) };
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 222));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Controls.Add(root);
 
-        var header = new Panel { Dock = DockStyle.Fill };
-        var title = new Label { Text = "BoundaryCheck", Font = new Font("Segoe UI Semibold", 20F), ForeColor = Color.FromArgb(23, 76, 55), AutoSize = true, Location = new Point(0, 0) };
-        var subtitle = new Label { Text = "앱의 사용자·역할 사이 접근 규칙을 정리하는 로컬 도구", ForeColor = Color.FromArgb(93, 107, 99), AutoSize = true, Location = new Point(2, 39) };
-        var localBadge = new Label { Text = "PC 안에서 처리", AutoSize = true, BackColor = Color.FromArgb(229, 242, 234), ForeColor = Color.FromArgb(23, 107, 80), Padding = new Padding(10, 6, 10, 6), Anchor = AnchorStyles.Top | AnchorStyles.Right, Location = new Point(820, 12) };
-        header.Controls.AddRange([title, subtitle, localBadge]);
+        var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
+        var brand = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
+        brand.RowStyles.Add(new RowStyle(SizeType.Percent, 58));
+        brand.RowStyles.Add(new RowStyle(SizeType.Percent, 42));
+        brand.Controls.Add(new Label { Text = "BoundaryCheck", Font = new Font("Segoe UI Semibold", 23F), ForeColor = Color.FromArgb(23, 76, 55), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        brand.Controls.Add(new Label { Text = "앱의 사용자와 역할 사이 접근 규칙을 정리합니다", ForeColor = Color.FromArgb(93, 107, 99), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
+        header.Controls.Add(brand, 0, 0);
+        var badgeHost = new Panel { Dock = DockStyle.Fill };
+        var localBadge = new Label { Text = "●  PC 안에서만 처리", AutoSize = true, BackColor = Color.FromArgb(229, 242, 234), ForeColor = Color.FromArgb(23, 107, 80), Padding = new Padding(12, 8, 12, 8), Anchor = AnchorStyles.Right };
+        badgeHost.Controls.Add(localBadge);
+        badgeHost.Resize += (_, _) => localBadge.Location = new Point(Math.Max(0, badgeHost.ClientSize.Width - localBadge.Width), (badgeHost.ClientSize.Height - localBadge.Height) / 2);
+        header.Controls.Add(badgeHost, 1, 0);
         root.Controls.Add(header, 0, 0);
 
+        var privacy = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(232, 244, 238), Padding = new Padding(16, 10, 16, 10), Margin = new Padding(0, 4, 0, 8) };
+        var privacyCopy = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
+        privacyCopy.RowStyles.Add(new RowStyle(SizeType.Percent, 48));
+        privacyCopy.RowStyles.Add(new RowStyle(SizeType.Percent, 52));
+        privacyCopy.Controls.Add(new Label { Text = "내 프로젝트 자료는 이 컴퓨터에 저장됩니다", Font = new Font("Segoe UI Semibold", 10.5F), ForeColor = Color.FromArgb(23, 76, 55), Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
+        privacyCopy.Controls.Add(new Label { Text = "현재 버전은 사용 정보를 수집하거나 서버로 보내지 않습니다. API 요청도 실행하지 않습니다.", ForeColor = Color.FromArgb(70, 91, 79), Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft }, 0, 1);
+        privacy.Controls.Add(privacyCopy);
+        root.Controls.Add(privacy, 0, 1);
+
         var project = Card();
-        var projectGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 3, Padding = new Padding(18) };
-        projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
+        var projectGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 4, Padding = new Padding(20, 12, 20, 14), Margin = new Padding(0) };
+        projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 112));
         projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 105));
+        projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 112));
         projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
-        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
         projectGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        projectGrid.Controls.Add(FieldLabel("프로젝트 이름"), 0, 0);
-        projectGrid.Controls.Add(StyleInput(_name), 1, 0);
-        projectGrid.Controls.Add(FieldLabel("대상 주소"), 2, 0);
-        projectGrid.Controls.Add(StyleInput(_origin), 3, 0);
-        projectGrid.Controls.Add(FieldLabel("API 경로"), 0, 1);
-        projectGrid.Controls.Add(StyleInput(_prefix), 1, 1);
-        var hint = new Label { Text = "승인된 테스트 환경의 주소와 API 경로를 입력하세요. 아직 요청은 실행되지 않습니다.", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(93, 107, 99), TextAlign = ContentAlignment.MiddleLeft };
-        projectGrid.Controls.Add(hint, 2, 1);
-        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Padding = new Padding(0, 4, 0, 0) };
+        projectGrid.Controls.Add(new Label { Text = "프로젝트 설정", Font = new Font("Segoe UI Semibold", 12F), ForeColor = Color.FromArgb(34, 54, 43), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        projectGrid.SetColumnSpan(projectGrid.GetControlFromPosition(0, 0)!, 4);
+        projectGrid.Controls.Add(FieldLabel("프로젝트 이름"), 0, 1);
+        projectGrid.Controls.Add(StyleInput(_name), 1, 1);
+        projectGrid.Controls.Add(FieldLabel("대상 주소"), 2, 1);
+        projectGrid.Controls.Add(StyleInput(_origin), 3, 1);
+        projectGrid.Controls.Add(FieldLabel("API 경로"), 0, 2);
+        projectGrid.Controls.Add(StyleInput(_prefix), 1, 2);
+        var hint = new Label { Text = "승인된 테스트 환경만 입력하세요. 현재 버전은 파일을 읽어 초안을 만들 뿐 서버에 연결하지 않습니다.", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(93, 107, 99), TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0) };
+        projectGrid.Controls.Add(hint, 2, 2);
+        projectGrid.SetColumnSpan(hint, 2);
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Padding = new Padding(0, 7, 0, 0), Margin = new Padding(0) };
         var harButton = Button("HAR 가져오기", false);
         harButton.Click += (_, _) => ImportFile(true);
         var openApiButton = Button("OpenAPI 가져오기", false);
@@ -89,44 +113,51 @@ public sealed class MainForm : Form
         var saveButton = Button("프로젝트 저장", true);
         saveButton.Click += (_, _) => SaveProject(showMessage: true);
         actions.Controls.AddRange([harButton, openApiButton, saveButton]);
-        projectGrid.Controls.Add(actions, 0, 2);
+        projectGrid.Controls.Add(actions, 0, 3);
         projectGrid.SetColumnSpan(actions, 4);
         project.Controls.Add(projectGrid);
-        root.Controls.Add(project, 0, 1);
+        root.Controls.Add(project, 0, 2);
 
         var scenarioCard = Card();
-        var scenarioLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(18) };
-        scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+        var scenarioLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(20, 14, 20, 14), Margin = new Padding(0) };
+        scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
         scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
-        var scenarioHeader = new Panel { Dock = DockStyle.Fill };
-        scenarioHeader.Controls.Add(new Label { Text = "가져온 요청", Font = new Font("Segoe UI Semibold", 13F), AutoSize = true, Location = new Point(0, 4) });
+        scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+        var scenarioHeader = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
+        scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        scenarioHeader.Controls.Add(new Label { Text = "요청 목록", Font = new Font("Segoe UI Semibold", 14F), ForeColor = Color.FromArgb(34, 54, 43), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
         var addButton = Button("요청 직접 추가", false);
-        addButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        addButton.Location = new Point(815, 0);
         addButton.Click += (_, _) => { _scenarios.Add(new Scenario()); UpdateSummary(); SaveProject(false); };
-        scenarioHeader.Controls.Add(addButton);
+        scenarioHeader.Controls.Add(addButton, 1, 0);
         scenarioLayout.Controls.Add(scenarioHeader, 0, 0);
 
         ConfigureGrid();
-        scenarioLayout.Controls.Add(_grid, 0, 1);
+        var scenarioBody = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Margin = new Padding(0) };
+        scenarioBody.Controls.Add(_grid);
+        var emptyState = new Label { Text = "아직 요청이 없어요\nHAR 또는 OpenAPI 파일을 가져와 첫 요청 목록을 만들어 보세요", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, ForeColor = Color.FromArgb(93, 107, 99), Font = new Font("Segoe UI", 12F), BackColor = Color.White };
+        scenarioBody.Controls.Add(emptyState);
+        _emptyState = emptyState;
+        scenarioLayout.Controls.Add(scenarioBody, 0, 1);
         _summary.Dock = DockStyle.Fill;
         _summary.ForeColor = Color.FromArgb(93, 107, 99);
         _summary.TextAlign = ContentAlignment.MiddleLeft;
         scenarioLayout.Controls.Add(_summary, 0, 2);
         scenarioCard.Controls.Add(scenarioLayout);
-        root.Controls.Add(scenarioCard, 0, 2);
+        root.Controls.Add(scenarioCard, 0, 3);
 
         LoadProject();
     }
 
-    private static Panel Card() => new() { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1), BorderStyle = BorderStyle.FixedSingle };
-    private static Label FieldLabel(string text) => new() { Text = text, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Color.FromArgb(54, 68, 60) };
-    private static TextBox StyleInput(TextBox input) { input.Dock = DockStyle.Fill; input.Margin = new Padding(2, 7, 12, 7); return input; }
+    private readonly Label _emptyState = new();
+
+    private static Panel Card() => new() { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1), Margin = new Padding(0, 4, 0, 4) };
+    private static Label FieldLabel(string text) => new() { Text = text, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Color.FromArgb(54, 68, 60), Font = new Font("Segoe UI", 9.5F) };
+    private static TextBox StyleInput(TextBox input) { input.Dock = DockStyle.Fill; input.Margin = new Padding(2, 5, 12, 5); input.BorderStyle = BorderStyle.FixedSingle; input.BackColor = Color.FromArgb(251, 252, 251); return input; }
 
     private static Button Button(string text, bool primary)
     {
-        var button = new Button { Text = text, AutoSize = true, Height = 34, FlatStyle = FlatStyle.Flat, Padding = new Padding(11, 2, 11, 2), Margin = new Padding(0, 0, 9, 0), Cursor = Cursors.Hand };
+        var button = new Button { Text = text, AutoSize = true, Height = 40, FlatStyle = FlatStyle.Flat, Padding = new Padding(14, 3, 14, 3), Margin = new Padding(0, 0, 10, 0), Cursor = Cursors.Hand, Font = new Font("Segoe UI Semibold", 9.5F) };
         button.FlatAppearance.BorderSize = primary ? 0 : 1;
         button.FlatAppearance.BorderColor = Color.FromArgb(221, 229, 223);
         button.BackColor = primary ? Color.FromArgb(23, 107, 80) : Color.White;
@@ -142,15 +173,19 @@ public sealed class MainForm : Form
         _grid.RowHeadersVisible = false;
         _grid.BackgroundColor = Color.White;
         _grid.BorderStyle = BorderStyle.None;
+        _grid.GridColor = Color.FromArgb(235, 240, 236);
         _grid.EnableHeadersVisualStyles = false;
-        _grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(247, 250, 247);
+        _grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(243, 247, 244);
         _grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(75, 91, 81);
-        _grid.ColumnHeadersHeight = 38;
-        _grid.RowTemplate.Height = 40;
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Method), HeaderText = "방식", Width = 90, ReadOnly = true });
+        _grid.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 9.5F);
+        _grid.ColumnHeadersHeight = 44;
+        _grid.RowTemplate.Height = 46;
+        _grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(232, 244, 238);
+        _grid.DefaultCellStyle.SelectionForeColor = Color.FromArgb(23, 76, 55);
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Method), HeaderText = "방식", Width = 110, ReadOnly = true });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Path), HeaderText = "요청 경로", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
-        _grid.Columns.Add(new DataGridViewComboBoxColumn { DataPropertyName = nameof(Scenario.Expectation), HeaderText = "기대 접근", Width = 145, DataSource = new[] { "미지정", "허용", "거부" } });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Occurrences), HeaderText = "발견 횟수", Width = 105, ReadOnly = true });
+        _grid.Columns.Add(new DataGridViewComboBoxColumn { DataPropertyName = nameof(Scenario.Expectation), HeaderText = "기대 접근", Width = 165, DataSource = new[] { "미지정", "허용", "거부" } });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Occurrences), HeaderText = "발견 횟수", Width = 125, ReadOnly = true });
         _grid.DataSource = _scenarios;
         _grid.CellValueChanged += (_, _) => SaveProject(false);
         _grid.CurrentCellDirtyStateChanged += (_, _) => { if (_grid.IsCurrentCellDirty) _grid.CommitEdit(DataGridViewDataErrorContexts.Commit); };
@@ -305,5 +340,10 @@ public sealed class MainForm : Form
         UpdateSummary();
     }
 
-    private void UpdateSummary() => _summary.Text = $"{_scenarios.Count}개 요청 · 기대 접근값 { _scenarios.Count(s => s.Expectation != "미지정") }개 지정 · 저장 위치: 이 PC";
+    private void UpdateSummary()
+    {
+        _emptyState.Visible = _scenarios.Count == 0;
+        _grid.Visible = _scenarios.Count > 0;
+        _summary.Text = $"{_scenarios.Count}개 요청 · 기대 접근값 {_scenarios.Count(s => s.Expectation != "미지정")}개 지정 · 자료는 이 PC에 저장";
+    }
 }
