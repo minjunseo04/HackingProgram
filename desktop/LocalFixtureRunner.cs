@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
+using System.Globalization;
 
 namespace BoundaryCheck;
 
@@ -12,6 +13,8 @@ internal sealed record LocalFixtureResult(
     string Path,
     string Expected,
     string Actual,
+    int? HttpStatusCode,
+    int? ControlHttpStatusCode,
     string Verdict,
     string Note);
 
@@ -55,7 +58,9 @@ internal static class LocalFixtureRunner
                     "GET",
                     check.Path,
                     check.Expected,
-                    actualStatus.ToString(),
+                    actualStatus.ToString(CultureInfo.InvariantCulture),
+                    actualStatus,
+                    controlStatus,
                     verdict,
                     note));
             }
@@ -72,6 +77,8 @@ internal static class LocalFixtureRunner
                     check.Path,
                     check.Expected,
                     "응답 없음",
+                    null,
+                    null,
                     "판정 보류",
                     "로컬 예제 요청을 완료하지 못했습니다. 응답 원문은 보관하지 않습니다."));
             }
