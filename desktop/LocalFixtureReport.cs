@@ -6,12 +6,12 @@ namespace BoundaryCheck;
 
 internal sealed record LocalFixtureReport
 {
-    public int FormatVersion { get; init; } = 1;
+    public int FormatVersion { get; init; } = 2;
     public string Product { get; init; } = "BoundaryCheck";
     public string AppVersion { get; init; } = "";
     public DateTimeOffset CreatedAtUtc { get; init; }
     public string Mode { get; init; } = "";
-    public string Scope { get; init; } = LocalFixtureReportStore.ScopeDescription;
+    public string Scope { get; init; } = LocalFixtureReportStore.ReadScopeDescription;
     public string NotTested { get; init; } = LocalFixtureReportStore.NotTestedDescription;
     public string IntegrityNote { get; init; } = LocalFixtureReportStore.IntegrityDescription;
     public bool ResponseBodiesStored { get; init; }
@@ -22,8 +22,9 @@ internal static class LocalFixtureReportStore
 {
     private const int MaximumFileSize = 1024 * 1024;
     private const int MaximumResultCount = 20;
-    private static readonly HashSet<string> Modes = ["안전 예제", "취약 예제"];
+    private static readonly HashSet<string> Modes = ["안전 예제", "취약 예제", "제한된 쓰기 검사"];
     private static readonly HashSet<string> Verdicts = ["기대와 일치", "검토 필요", "판정 보류"];
+    private static readonly HashSet<string> ReadPaths = ["/api/documents/acme-plan", "/api/documents/missing-doc"];
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -31,15 +32,18 @@ internal static class LocalFixtureReportStore
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
     };
 
-    public const string ScopeDescription = "내장 Acme/Birch 가상 예제 · 127.0.0.1 임시 포트 · GET 요청만 · 프록시와 자동 리디렉션 사용 안 함";
+    public const string ReadScopeDescription = "내장 Acme/Birch 가상 예제 · 127.0.0.1 임시 포트 · GET 요청만 · 프록시와 자동 리디렉션 사용 안 함";
+    public const string WriteScopeDescription = "내장 Acme/Birch 가상 예제 · 127.0.0.1 임시 포트 · 고정된 PATCH와 라벨 상태 확인 GET만 · 라벨은 서버 메모리에서만 변경되고 실행 종료 후 폐기 · 프록시와 자동 리디렉션 사용 안 함";
+    private const string LegacyReadScopeDescription = "내장 Acme/Birch 가상 예제 · 127.0.0.1 임시 포트 · GET 요청만 · 프록시와 자동 리디렉션 사용 안 함";
     public const string NotTestedDescription = "사용자 프로젝트, 대상 주소, 가져온 HAR/OpenAPI 요청, 실제 계정, 외부 서버 및 다른 HTTP 방식은 검사하지 않았습니다. 이 결과는 전체 앱의 보안을 보증하지 않습니다.";
     public const string IntegrityDescription = "JSON 보고서는 사용자가 수정할 수 있습니다. 변조 방지 서명이나 독립적인 보증을 제공하지 않습니다.";
 
-    public static LocalFixtureReport Create(bool vulnerable, IReadOnlyList<LocalFixtureResult> results) => new()
+    public static LocalFixtureReport Create(string mode, IReadOnlyList<LocalFixtureResult> results) => new()
     {
         AppVersion = UpdateClient.CurrentVersion().ToString(),
         CreatedAtUtc = DateTimeOffset.UtcNow,
-        Mode = vulnerable ? "취약 예제" : "안전 예제",
+        Mode = mode,
+        Scope = mode == "제한된 쓰기 검사" ? WriteScopeDescription : ReadScopeDescription,
         Results = results.ToList(),
     };
 
@@ -97,28 +101,37 @@ internal static class LocalFixtureReportStore
 
     private static void Validate(LocalFixtureReport report)
     {
-        if (report.FormatVersion != 1 || report.Product != "BoundaryCheck")
+        if (report.FormatVersion is not (1 or 2) || report.Product != "BoundaryCheck")
             throw new InvalidDataException("지원하지 않는 BoundaryCheck 보고서 형식입니다.");
         if (!Version.TryParse(report.AppVersion, out _) || report.AppVersion.Length > 24)
             throw new InvalidDataException("보고서 앱 버전 값이 올바르지 않습니다.");
         if (report.CreatedAtUtc == default || report.CreatedAtUtc.Offset != TimeSpan.Zero)
             throw new InvalidDataException("보고서 생성 시각이 올바르지 않습니다.");
-        if (report.Mode is null || !Modes.Contains(report.Mode))
+        if (report.Mode is null || !Modes.Contains(report.Mode) || (report.FormatVersion == 1 && report.Mode == "제한된 쓰기 검사"))
             throw new InvalidDataException("보고서 실행 모드가 올바르지 않습니다.");
-        if (report.Scope != ScopeDescription || report.NotTested != NotTestedDescription || report.IntegrityNote != IntegrityDescription || report.ResponseBodiesStored)
+        var expectedScope = report.FormatVersion == 1
+            ? LegacyReadScopeDescription
+            : report.Mode == "제한된 쓰기 검사" ? WriteScopeDescription : ReadScopeDescription;
+        if (report.Scope != expectedScope || report.NotTested != NotTestedDescription || report.IntegrityNote != IntegrityDescription || report.ResponseBodiesStored)
             throw new InvalidDataException("보고서 범위 또는 안내가 예상과 다릅니다.");
         if (report.Results is null || report.Results.Count is < 1 or > MaximumResultCount)
             throw new InvalidDataException("보고서 결과 수가 올바르지 않습니다.");
 
         foreach (var result in report.Results)
         {
+            var writeMode = report.Mode == "제한된 쓰기 검사";
+            var supportedMethod = writeMode ? result?.Method is "GET" or "PATCH" : result?.Method == "GET";
+            var supportedPath = writeMode
+                ? result?.Method == "PATCH"
+                    ? result.Path == "/api/documents/acme-plan/label"
+                    : result?.Path == "/api/documents/acme-plan/label-check/owner"
+                : result is not null && ReadPaths.Contains(result.Path);
             if (result is null ||
                 !HasBoundedText(result.Scenario, 120) ||
                 !HasBoundedText(result.Identity, 120) ||
-                result.Method != "GET" ||
+                !supportedMethod ||
                 !HasBoundedText(result.Path, 300) ||
-                !result.Path.StartsWith("/api/", StringComparison.Ordinal) ||
-                result.Path.Contains('?') || result.Path.Contains('#') || result.Path.Contains('\\') ||
+                !supportedPath ||
                 result.Expected is not ("허용" or "거부") ||
                 !HasBoundedText(result.Actual, 32) ||
                 !Verdicts.Contains(result.Verdict) ||

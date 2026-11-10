@@ -12,8 +12,17 @@ internal sealed class LocalFixtureDialog : Form
     private readonly Button _vulnerableButton = MainForm.Button("취약 예제 실행", false);
     private readonly Button _saveReportButton = MainForm.Button("보고서 저장", false);
     private readonly Button _openReportButton = MainForm.Button("보고서 열기", false);
+    private readonly Button _writeTestButton = MainForm.Button("제한된 쓰기 검사", false);
+    private readonly CheckBox _sessionWriteConsent = new()
+    {
+        AutoSize = true,
+        Text = "이번 실행에서 내장 메모리 쓰기 검사 허용",
+        ForeColor = Color.FromArgb(54, 68, 60),
+    };
+    private readonly Label _writeSettingHint = new();
     private readonly CancellationTokenSource _closing = new();
     private LocalFixtureReport? _currentReport;
+    private bool _persistentWriteOptIn;
     private bool _running;
 
     public LocalFixtureDialog()
@@ -25,10 +34,11 @@ internal sealed class LocalFixtureDialog : Form
         StartPosition = FormStartPosition.CenterParent;
         BackColor = Color.FromArgb(246, 248, 246);
         Font = new Font("Segoe UI", 10F);
+        _persistentWriteOptIn = LocalFixtureWriteSettings.IsEnabled();
 
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(22), Margin = new Padding(0) };
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 102));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Controls.Add(root);
 
@@ -46,7 +56,7 @@ internal sealed class LocalFixtureDialog : Form
         }, 0, 0);
         noticeLayout.Controls.Add(new Label
         {
-            Text = "저장 프로젝트, 대상 주소, 가져온 HAR/OpenAPI는 예제 실행에 쓰지 않습니다. 요청은 127.0.0.1의 임시 포트로만 보내며, 인터넷 연결과 자동 리디렉션을 사용하지 않습니다. 보고서는 범위·결과·상태 코드만 선택한 JSON 파일에 저장하고, 응답 본문은 저장하지 않습니다. 보고서 파일은 수정할 수 있습니다.",
+            Text = "저장 프로젝트, 대상 주소, 가져온 HAR/OpenAPI는 예제 실행에 쓰지 않습니다. 요청은 127.0.0.1의 임시 포트로만 보내며 프록시·자동 리디렉션을 사용하지 않습니다. 쓰기 검사는 설정·실행별 동의·최종 확인이 모두 필요하고 가상 메모리 값은 예제 종료 후 폐기됩니다. 보고서에는 응답 본문을 저장하지 않습니다.",
             Dock = DockStyle.Fill,
             ForeColor = Color.FromArgb(70, 91, 79),
             TextAlign = ContentAlignment.TopLeft,
@@ -54,14 +64,20 @@ internal sealed class LocalFixtureDialog : Form
         notice.Controls.Add(noticeLayout);
         root.Controls.Add(notice, 0, 0);
 
-        var actions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
-        actions.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        var actions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2, Margin = new Padding(0) };
+        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
+        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
+        actions.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+        actions.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         _secureButton.Click += async (_, _) => await RunExampleAsync(vulnerable: false);
         _vulnerableButton.Click += async (_, _) => await RunExampleAsync(vulnerable: true);
         _saveReportButton.Enabled = false;
         _saveReportButton.Click += (_, _) => SaveReport();
         _openReportButton.Click += (_, _) => OpenReport();
+        _writeTestButton.Enabled = false;
+        _writeTestButton.Click += async (_, _) => await ConfirmAndRunWriteExampleAsync();
+        _sessionWriteConsent.Enabled = _persistentWriteOptIn;
+        _sessionWriteConsent.CheckedChanged += (_, _) => UpdateWriteControls();
         var actionButtons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = false, Margin = new Padding(0) };
         actionButtons.Controls.AddRange([_secureButton, _vulnerableButton, _saveReportButton, _openReportButton]);
         actions.Controls.Add(actionButtons, 0, 0);
@@ -70,6 +86,16 @@ internal sealed class LocalFixtureDialog : Form
         _status.TextAlign = ContentAlignment.MiddleLeft;
         _status.Padding = new Padding(8, 0, 0, 0);
         actions.Controls.Add(_status, 1, 0);
+        var writeControls = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = false, Margin = new Padding(0), Padding = new Padding(0, 3, 0, 0) };
+        writeControls.Controls.Add(_sessionWriteConsent);
+        writeControls.Controls.Add(_writeTestButton);
+        actions.Controls.Add(writeControls, 0, 1);
+        _writeSettingHint.Dock = DockStyle.Fill;
+        _writeSettingHint.ForeColor = Color.FromArgb(93, 107, 99);
+        _writeSettingHint.TextAlign = ContentAlignment.MiddleLeft;
+        _writeSettingHint.Padding = new Padding(8, 0, 0, 0);
+        actions.Controls.Add(_writeSettingHint, 1, 1);
+        UpdateWriteControls();
         root.Controls.Add(actions, 0, 1);
 
         ConfigureGrid();
@@ -130,7 +156,43 @@ internal sealed class LocalFixtureDialog : Form
         _grid.Visible = false;
     }
 
-    private async Task RunExampleAsync(bool vulnerable)
+    private Task RunExampleAsync(bool vulnerable)
+    {
+        var mode = vulnerable ? "취약 예제" : "안전 예제";
+        return RunAndDisplayAsync(mode, token => LocalFixtureRunner.RunAsync(vulnerable, token));
+    }
+
+    private async Task ConfirmAndRunWriteExampleAsync()
+    {
+        if (_running || !_persistentWriteOptIn || !_sessionWriteConsent.Checked) return;
+
+        var approval = MessageBox.Show(
+            this,
+            "내장 예제의 임시 127.0.0.1 포트에 고정된 요청만 보냅니다. Acme 소유자 쓰기가 먼저 성공한 경우에만 Birch 쓰기를 시도하며, 최대 PATCH 4회와 상태 확인 GET 2회입니다. 가상 문서 라벨만 fixture 서버 메모리에서 바뀌고 각 예제 종료 후 폐기됩니다. 저장 프로젝트, 대상 주소, HAR/OpenAPI 파일과 실제 서비스는 사용하지 않습니다.\n\n이 제한된 예제를 실행할까요?",
+            "쓰기 검사 마지막 확인",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning,
+            MessageBoxDefaultButton.Button2);
+        if (approval != DialogResult.Yes) return;
+
+        if (!LocalFixtureWriteSettings.IsEnabled())
+        {
+            _persistentWriteOptIn = false;
+            _sessionWriteConsent.Checked = false;
+            _sessionWriteConsent.Enabled = false;
+            UpdateWriteControls();
+            MessageBox.Show(this, "앱 설정에서 쓰기 검사가 꺼져 있어 실행하지 않았습니다.", "쓰기 검사 꺼짐", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        await RunAndDisplayAsync(
+            "제한된 쓰기 검사",
+            token => LocalFixtureRunner.RunWriteAsync(_sessionWriteConsent.Checked, token));
+    }
+
+    private async Task RunAndDisplayAsync(
+        string mode,
+        Func<CancellationToken, Task<IReadOnlyList<LocalFixtureResult>>> run)
     {
         if (_running) return;
         _running = true;
@@ -139,22 +201,23 @@ internal sealed class LocalFixtureDialog : Form
         _vulnerableButton.Enabled = false;
         _saveReportButton.Enabled = false;
         _openReportButton.Enabled = false;
-        _status.Text = vulnerable ? "취약 예제 실행 중…" : "안전 예제 실행 중…";
+        _writeTestButton.Enabled = false;
+        _sessionWriteConsent.Enabled = false;
+        _status.Text = $"{mode} 실행 중…";
         _emptyState.Visible = false;
         _grid.Visible = false;
         _results.Clear();
 
         try
         {
-            var results = await LocalFixtureRunner.RunAsync(vulnerable, _closing.Token);
+            var results = await run(_closing.Token);
             if (IsDisposed) return;
             foreach (var result in results) _results.Add(result);
-            _currentReport = LocalFixtureReportStore.Create(vulnerable, results);
+            _currentReport = LocalFixtureReportStore.Create(mode, results);
             _saveReportButton.Enabled = results.Count > 0;
             _grid.Visible = _results.Count > 0;
             _emptyState.Visible = _results.Count == 0;
 
-            var mode = vulnerable ? "취약 예제" : "안전 예제";
             _status.Text = FormatSummary(mode, results);
         }
         catch (OperationCanceledException) when (_closing.IsCancellationRequested) { }
@@ -163,7 +226,7 @@ internal sealed class LocalFixtureDialog : Form
             if (!IsDisposed)
             {
                 _status.Text = "예제 실행을 완료하지 못했습니다.";
-                MessageBox.Show(this, "로컬 예제를 실행하지 못했습니다. 프로젝트 자료는 사용하거나 전송하지 않았습니다.", "실행 오류", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "내장 로컬 예제를 실행하지 못했습니다. 프로젝트 자료나 대상 주소는 사용하지 않았습니다.", "실행 오류", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 _emptyState.Text = "실행하지 못했어요. 다시 시도해 주세요.";
                 _emptyState.Visible = true;
             }
@@ -176,8 +239,26 @@ internal sealed class LocalFixtureDialog : Form
                 _secureButton.Enabled = true;
                 _vulnerableButton.Enabled = true;
                 _openReportButton.Enabled = true;
+                if (mode == "제한된 쓰기 검사") _sessionWriteConsent.Checked = false;
+                _sessionWriteConsent.Enabled = _persistentWriteOptIn;
+                UpdateWriteControls();
             }
         }
+    }
+
+    private void UpdateWriteControls()
+    {
+        if (!_persistentWriteOptIn)
+        {
+            _writeSettingHint.Text = "메인 화면 설정에서 쓰기 검사를 먼저 켜세요.";
+            _writeTestButton.Enabled = false;
+            return;
+        }
+
+        _writeSettingHint.Text = _sessionWriteConsent.Checked
+            ? "실행 버튼을 누른 뒤 마지막 확인이 필요합니다."
+            : "설정이 켜져 있어도 별도 실행 동의가 필요합니다.";
+        _writeTestButton.Enabled = !_running && _sessionWriteConsent.Checked;
     }
 
     private void SaveReport()

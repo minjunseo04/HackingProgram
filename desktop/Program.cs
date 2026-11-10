@@ -48,10 +48,17 @@ public sealed class MainForm : Form
     private readonly TextBox _name = new() { Text = "내 첫 프로젝트" };
     private readonly TextBox _origin = new() { Text = "https://app.example.test" };
     private readonly TextBox _prefix = new() { Text = "/api/" };
+    private readonly CheckBox _allowLocalFixtureWrites = new()
+    {
+        AutoSize = true,
+        Text = "내장 예제 메모리 쓰기 검사 허용 (기본 꺼짐)",
+        ForeColor = Color.FromArgb(54, 68, 60),
+    };
     private readonly List<TestIdentity> _identities = [];
     private readonly BindingList<Scenario> _scenarios = [];
     private readonly DataGridView _grid = new();
     private readonly Label _summary = new();
+    private bool _updatingWriteSettings;
 
     public MainForm()
     {
@@ -62,11 +69,12 @@ public sealed class MainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.FromArgb(246, 248, 246);
         Font = new Font("Segoe UI", 10F);
+        _allowLocalFixtureWrites.Checked = LocalFixtureWriteSettings.IsEnabled();
 
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(30, 22, 30, 24) };
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 116));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 90));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 288));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 316));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Controls.Add(root);
 
@@ -97,7 +105,7 @@ public sealed class MainForm : Form
         root.Controls.Add(privacy, 0, 1);
 
         var project = Card();
-        var projectGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 5, Padding = new Padding(20, 12, 20, 14), Margin = new Padding(0) };
+        var projectGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 6, Padding = new Padding(20, 12, 20, 14), Margin = new Padding(0) };
         projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
         projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
@@ -106,8 +114,9 @@ public sealed class MainForm : Form
         projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));
         projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));
         projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
+        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
         projectGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        projectGrid.Controls.Add(new Label { Text = "프로젝트 설정", Font = new Font("Segoe UI Semibold", 12F), ForeColor = Color.FromArgb(34, 54, 43), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        projectGrid.Controls.Add(new Label { Text = "프로젝트·로컬 검사 설정", Font = new Font("Segoe UI Semibold", 12F), ForeColor = Color.FromArgb(34, 54, 43), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
         projectGrid.SetColumnSpan(projectGrid.GetControlFromPosition(0, 0)!, 4);
         projectGrid.Controls.Add(FieldLabel("프로젝트 이름"), 0, 1);
         projectGrid.Controls.Add(StyleInput(_name), 1, 1);
@@ -115,9 +124,12 @@ public sealed class MainForm : Form
         projectGrid.Controls.Add(StyleInput(_origin), 3, 1);
         projectGrid.Controls.Add(FieldLabel("API 경로"), 0, 2);
         projectGrid.Controls.Add(StyleInput(_prefix), 1, 2);
-        var hint = new Label { Text = "요청을 테스트 신원별로 나눠 기대 접근값을 기록합니다. API 서버에는 연결하지 않습니다.", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(93, 107, 99), TextAlign = ContentAlignment.MiddleLeft };
+        var hint = new Label { Text = "가져온 요청은 실행하지 않습니다. 쓰기 검사는 내장 127.0.0.1 예제에만 별도 동의 후 적용됩니다.", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(93, 107, 99), TextAlign = ContentAlignment.MiddleLeft };
         projectGrid.Controls.Add(hint, 0, 3);
         projectGrid.SetColumnSpan(hint, 4);
+        projectGrid.Controls.Add(_allowLocalFixtureWrites, 0, 4);
+        projectGrid.SetColumnSpan(_allowLocalFixtureWrites, 4);
+        _allowLocalFixtureWrites.CheckedChanged += (_, _) => SaveLocalFixtureWriteSetting();
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Padding = new Padding(0, 8, 0, 0), Margin = new Padding(0) };
         var harButton = Button("HAR 가져오기", false);
         harButton.Click += (_, _) => ImportFile(true);
@@ -126,7 +138,7 @@ public sealed class MainForm : Form
         var saveButton = Button("프로젝트 저장", true);
         saveButton.Click += (_, _) => SaveProject(showMessage: true);
         actions.Controls.AddRange([harButton, openApiButton, saveButton]);
-        projectGrid.Controls.Add(actions, 0, 4);
+        projectGrid.Controls.Add(actions, 0, 5);
         projectGrid.SetColumnSpan(actions, 4);
         project.Controls.Add(projectGrid);
         root.Controls.Add(project, 0, 2);
@@ -519,6 +531,22 @@ public sealed class MainForm : Form
             if (showMessage) MessageBox.Show(this, $"프로젝트를 이 PC에 저장했습니다.\n{DataFile}", "저장 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex) { if (showMessage) MessageBox.Show(this, ex.Message, "저장 실패", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+    }
+
+    private void SaveLocalFixtureWriteSetting()
+    {
+        if (_updatingWriteSettings) return;
+        try
+        {
+            LocalFixtureWriteSettings.Save(_allowLocalFixtureWrites.Checked);
+        }
+        catch (Exception ex)
+        {
+            _updatingWriteSettings = true;
+            _allowLocalFixtureWrites.Checked = !_allowLocalFixtureWrites.Checked;
+            _updatingWriteSettings = false;
+            MessageBox.Show(this, $"안전 설정을 저장하지 못했습니다. 기존 설정을 유지합니다.\n\n{ex.Message}", "설정 저장 실패", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
     }
 
     private void LoadProject()
