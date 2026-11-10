@@ -1,7 +1,7 @@
 # BoundaryCheck Windows desktop app
 
 - 현재 소스 버전: **0.3.0**
-- 공개 GitHub Release: **0.2.0**
+- 공개 GitHub Release: **0.3.0**
 
 ## 실행
 
@@ -25,7 +25,7 @@ GitHub Releases에서 `BoundaryCheck-win-x64.zip`을 받아 압축을 풀고 `Bo
 
 ## 소스에서 빌드
 
-새 버전은 버전을 올리고 `v*.*.*` 태그를 push하면 GitHub Actions가 릴리스 파일을 만듭니다. 현재 v0.3.0은 로컬 소스이며 공개 Release는 v0.2.0입니다. 앱은 사용자가 **업데이트 확인**을 누른 경우에만 이 저장소의 최신 Release를 확인합니다. GitHub 릴리스 자산의 SHA-256 digest와 다운로드 파일을 대조하고, 성공한 경우에만 현재 폴더의 실행 파일을 교체합니다. 압축을 푼 프로그램 폴더에 쓰기 권한이 필요합니다.
+새 버전은 버전을 올리고 `v*.*.*` 태그를 push하면 GitHub Actions가 릴리스 파일을 만듭니다. 현재 공개 Release는 v0.3.0입니다. 앱은 사용자가 **업데이트 확인**을 누른 경우에만 이 저장소의 최신 Release를 확인합니다. GitHub 릴리스 자산의 SHA-256 digest와 다운로드 파일을 대조하고, 성공한 경우에만 현재 폴더의 실행 파일을 교체합니다. 압축을 푼 프로그램 폴더에 쓰기 권한이 필요합니다.
 
 `.NET 10 Windows Desktop SDK`가 필요합니다.
 
