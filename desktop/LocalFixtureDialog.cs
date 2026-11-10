@@ -37,7 +37,7 @@ internal sealed class LocalFixtureDialog : Form
         _persistentWriteOptIn = LocalFixtureWriteSettings.IsEnabled();
 
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(22), Margin = new Padding(0) };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 164));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 102));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Controls.Add(root);
@@ -56,7 +56,7 @@ internal sealed class LocalFixtureDialog : Form
         }, 0, 0);
         noticeLayout.Controls.Add(new Label
         {
-            Text = "저장 프로젝트, 대상 주소, 가져온 HAR/OpenAPI는 예제 실행에 쓰지 않습니다. 요청은 127.0.0.1의 임시 포트로만 보내며 프록시·자동 리디렉션을 사용하지 않습니다. 쓰기 검사는 설정·실행별 동의·최종 확인이 모두 필요하고 가상 메모리 값은 예제 종료 후 폐기됩니다. 보고서에는 응답 본문을 저장하지 않습니다.",
+            Text = "내장 예제만 실행합니다. 저장 프로젝트·대상 주소·가져온 HAR/OpenAPI는 사용하지 않습니다. 요청은 임시 127.0.0.1 포트로만 보내며 프록시·자동 리디렉션을 사용하지 않습니다. 쓰기 검사는 설정·실행별 동의와 최종 확인 후 가상 메모리에서만 실행하고, 값은 예제 종료 후 폐기합니다. 응답 본문은 보고서에 저장하지 않습니다.",
             Dock = DockStyle.Fill,
             ForeColor = Color.FromArgb(70, 91, 79),
             TextAlign = ContentAlignment.TopLeft,
@@ -250,14 +250,14 @@ internal sealed class LocalFixtureDialog : Form
     {
         if (!_persistentWriteOptIn)
         {
-            _writeSettingHint.Text = "메인 화면 설정에서 쓰기 검사를 먼저 켜세요.";
+            _writeSettingHint.Text = "메인 화면 설정에서 쓰기 검사를\n먼저 켜세요.";
             _writeTestButton.Enabled = false;
             return;
         }
 
         _writeSettingHint.Text = _sessionWriteConsent.Checked
-            ? "실행 버튼을 누른 뒤 마지막 확인이 필요합니다."
-            : "설정이 켜져 있어도 별도 실행 동의가 필요합니다.";
+            ? "실행 버튼을 누른 뒤\n마지막 확인이 필요합니다."
+            : "설정이 켜져 있어도\n별도 실행 동의가 필요합니다.";
         _writeTestButton.Enabled = !_running && _sessionWriteConsent.Checked;
     }
 
