@@ -136,8 +136,9 @@ public sealed class MainForm : Form
         scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
         scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
-        var scenarioHeader = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 1, Margin = new Padding(0) };
+        var scenarioHeader = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 5, RowCount = 1, Margin = new Padding(0) };
         scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -145,12 +146,19 @@ public sealed class MainForm : Form
         var identityButton = Button("테스트 신원 관리", false);
         identityButton.Click += (_, _) => ManageIdentities();
         scenarioHeader.Controls.Add(identityButton, 1, 0);
+        var localFixtureButton = Button("로컬 예제 실행", false);
+        localFixtureButton.Click += (_, _) =>
+        {
+            using var dialog = new LocalFixtureDialog();
+            dialog.ShowDialog(this);
+        };
+        scenarioHeader.Controls.Add(localFixtureButton, 2, 0);
         var duplicateButton = Button("선택 요청 복제", false);
         duplicateButton.Click += (_, _) => DuplicateSelectedScenario();
-        scenarioHeader.Controls.Add(duplicateButton, 2, 0);
+        scenarioHeader.Controls.Add(duplicateButton, 3, 0);
         var addButton = Button("요청 직접 추가", false);
         addButton.Click += (_, _) => { _scenarios.Add(new Scenario()); UpdateSummary(); SaveProject(false); };
-        scenarioHeader.Controls.Add(addButton, 3, 0);
+        scenarioHeader.Controls.Add(addButton, 4, 0);
         scenarioLayout.Controls.Add(scenarioHeader, 0, 0);
 
         ConfigureGrid();
