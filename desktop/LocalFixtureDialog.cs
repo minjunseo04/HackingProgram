@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 namespace BoundaryCheck;
 
-internal sealed class LocalFixtureDialog : Form
+internal sealed class LocalFixtureDialog : DpiAwareForm
 {
     private readonly BindingList<LocalFixtureResult> _results = [];
     private readonly DataGridView _grid = new();
@@ -28,7 +28,6 @@ internal sealed class LocalFixtureDialog : Form
     public LocalFixtureDialog()
     {
         Text = "내장 로컬 테스트 예제";
-        AutoScaleMode = AutoScaleMode.Dpi;
         MinimumSize = new Size(1000, 640);
         Size = new Size(1240, 760);
         StartPosition = FormStartPosition.CenterParent;

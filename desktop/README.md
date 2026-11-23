@@ -1,6 +1,6 @@
 # BoundaryCheck Windows desktop app
 
-- 현재 소스 버전: **0.6.2**
+- 현재 소스 버전: **0.6.3**
 - 공개 GitHub Release: [최신 릴리스](https://github.com/minjunseo04/HackingProgram/releases/latest)
 
 ## 실행
@@ -11,6 +11,12 @@ GitHub Releases에서 `BoundaryCheck-win-x64.zip` 전체를 새 폴더에 압축
 
 - 앱 내 업데이트 도우미를 실행 파일에 내장했습니다. `apply-update.ps1`이 설치 폴더에 따로 없어도 SHA-256 검증 후 업데이트할 수 있습니다.
 - v0.6.0 앱에서 업데이트 도우미가 누락되어 업데이트가 실패하면, 전체 공식 ZIP을 새 폴더에 압축 해제하고 그 안의 `BoundaryCheck.exe`를 한 번 실행하세요. v0.6.0은 누락된 도우미를 자체 복구할 수 없습니다.
+
+## v0.6.3 화면 배율 수정
+
+- 창이 열리는 Windows DPI에 맞춰 고정 크기 레이아웃을 배율 조정해 상단 제목, 통계 카드, 입력 항목과 표가 잘리지 않도록 합니다.
+- 모니터 간 이동으로 DPI가 바뀌면 현재 레이아웃 크기에 변경 비율을 적용합니다.
+- 메인 화면, 신원 관리 창, 로컬 예제 창에 공통 적용합니다.
 
 ## v0.6.1 UI 수정
 

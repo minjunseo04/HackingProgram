@@ -41,7 +41,7 @@ public sealed class ProjectFile
     public List<Scenario> Scenarios { get; set; } = [];
 }
 
-public sealed class MainForm : Form
+internal sealed class MainForm : DpiAwareForm
 {
     private static readonly string DataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BoundaryCheck");
     private static readonly string DataFile = Path.Combine(DataDirectory, "project.json");
@@ -68,8 +68,7 @@ public sealed class MainForm : Form
     public MainForm()
     {
         Text = "BoundaryCheck";
-        AutoScaleMode = AutoScaleMode.Dpi;
-        MinimumSize = new Size(1040, 720);
+        MinimumSize = new Size(880, 620);
         Size = new Size(1420, 900);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = UiTheme.Canvas;
@@ -784,7 +783,7 @@ public sealed class MainForm : Form
     private sealed record IdentityChoice(string Id, string Label);
 }
 
-internal sealed class TestIdentityDialog : Form
+internal sealed class TestIdentityDialog : DpiAwareForm
 {
     private readonly ListBox _list = new() { Dock = DockStyle.Fill, FormattingEnabled = true };
     private readonly TextBox _name = new();
@@ -805,7 +804,6 @@ internal sealed class TestIdentityDialog : Form
         }).ToList();
 
         Text = "테스트 신원 관리";
-        AutoScaleMode = AutoScaleMode.Dpi;
         MinimumSize = new Size(720, 520);
         Size = new Size(820, 600);
         StartPosition = FormStartPosition.CenterParent;

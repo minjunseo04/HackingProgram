@@ -80,6 +80,103 @@ internal static class UiTheme
         grid.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(249, 251, 249);
     }
 
+    public static void ScaleLayout(Control root, float factor, bool scaleFormBounds)
+    {
+        if (factor <= 0 || Math.Abs(factor - 1f) < 0.01f) return;
+
+        ScaleControlTree(root, factor, root, scaleFormBounds);
+        root.PerformLayout();
+    }
+
+    private static void ScaleControlTree(Control control, float factor, Control root, bool scaleFormBounds)
+    {
+        control.Padding = Scale(control.Padding, factor);
+        control.Margin = Scale(control.Margin, factor);
+
+        if (control.MinimumSize != Size.Empty) control.MinimumSize = Scale(control.MinimumSize, factor);
+        if (control.MaximumSize != Size.Empty) control.MaximumSize = Scale(control.MaximumSize, factor);
+
+        var scaleBounds = control == root
+            ? scaleFormBounds && control is Form { WindowState: FormWindowState.Normal }
+            : control.Parent is FlowLayoutPanel || control.Dock == DockStyle.None;
+        if (scaleBounds && !control.AutoSize)
+            control.Size = Scale(control.Size, factor);
+
+        if (control is TableLayoutPanel table)
+        {
+            foreach (RowStyle row in table.RowStyles)
+                if (row.SizeType == SizeType.Absolute) row.Height = Math.Max(1, row.Height * factor);
+            foreach (ColumnStyle column in table.ColumnStyles)
+                if (column.SizeType == SizeType.Absolute) column.Width = Math.Max(1, column.Width * factor);
+        }
+
+        if (control is DataGridView grid)
+        {
+            grid.RowTemplate.Height = Scale(grid.RowTemplate.Height, factor);
+            grid.ColumnHeadersHeight = Scale(grid.ColumnHeadersHeight, factor);
+            grid.DefaultCellStyle.Padding = Scale(grid.DefaultCellStyle.Padding, factor);
+            grid.ColumnHeadersDefaultCellStyle.Padding = Scale(grid.ColumnHeadersDefaultCellStyle.Padding, factor);
+            foreach (DataGridViewColumn column in grid.Columns)
+            {
+                if (column.Width > 0) column.Width = Scale(column.Width, factor);
+                if (column.MinimumWidth > 0) column.MinimumWidth = Scale(column.MinimumWidth, factor);
+            }
+            foreach (DataGridViewRow row in grid.Rows)
+                if (!row.IsNewRow) row.Height = Scale(row.Height, factor);
+        }
+
+        foreach (Control child in control.Controls)
+            ScaleControlTree(child, factor, root, scaleFormBounds);
+    }
+
+    private static int Scale(int value, float factor) => value <= 0 ? value : Math.Max(1, (int)Math.Round(value * factor));
+    private static Size Scale(Size value, float factor) => new(Scale(value.Width, factor), Scale(value.Height, factor));
+    private static Padding Scale(Padding value, float factor) => new(
+        Scale(value.Left, factor), Scale(value.Top, factor), Scale(value.Right, factor), Scale(value.Bottom, factor));
+
     public static void DrawCardBorder(Panel panel, PaintEventArgs args) =>
         ControlPaint.DrawBorder(args.Graphics, panel.ClientRectangle, Border, ButtonBorderStyle.Solid);
+}
+
+internal abstract class DpiAwareForm : Form
+{
+    protected DpiAwareForm()
+    {
+        AutoScaleMode = AutoScaleMode.None;
+    }
+
+    protected override void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+        UiTheme.ScaleLayout(this, DeviceDpi / 96f, scaleFormBounds: true);
+        FitToWorkingArea();
+    }
+
+    protected override void OnShown(EventArgs e)
+    {
+        base.OnShown(e);
+        FitToWorkingArea();
+    }
+
+    protected override void OnDpiChanged(DpiChangedEventArgs e)
+    {
+        base.OnDpiChanged(e);
+        if (e.DeviceDpiOld > 0 && e.DeviceDpiNew > 0)
+            UiTheme.ScaleLayout(this, (float)e.DeviceDpiNew / e.DeviceDpiOld, scaleFormBounds: false);
+        FitToWorkingArea();
+    }
+
+    private void FitToWorkingArea()
+    {
+        if (WindowState != FormWindowState.Normal) return;
+
+        var workingArea = Screen.FromControl(this).WorkingArea;
+        var maxWidth = Math.Max(640, workingArea.Width - 32);
+        var maxHeight = Math.Max(480, workingArea.Height - 32);
+        MinimumSize = new Size(Math.Min(MinimumSize.Width, maxWidth), Math.Min(MinimumSize.Height, maxHeight));
+        Size = new Size(Math.Min(Width, maxWidth), Math.Min(Height, maxHeight));
+        Location = new Point(
+            Math.Clamp(Left, workingArea.Left, workingArea.Right - Width),
+            Math.Clamp(Top, workingArea.Top, workingArea.Bottom - Height));
+    }
 }
