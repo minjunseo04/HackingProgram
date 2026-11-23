@@ -1,11 +1,16 @@
 # BoundaryCheck Windows desktop app
 
-- 현재 소스 버전: **0.6.1**
+- 현재 소스 버전: **0.6.2**
 - 공개 GitHub Release: [최신 릴리스](https://github.com/minjunseo04/HackingProgram/releases/latest)
 
 ## 실행
 
-GitHub Releases에서 `BoundaryCheck-win-x64.zip`을 받아 압축을 풀고 `BoundaryCheck.exe`를 실행합니다. Windows x64용 자체 포함 파일이라 별도 .NET 설치가 필요하지 않습니다.
+GitHub Releases에서 `BoundaryCheck-win-x64.zip` 전체를 새 폴더에 압축을 풀고 `BoundaryCheck.exe`를 실행합니다. Windows x64용 자체 포함 파일이라 별도 .NET 설치가 필요하지 않습니다. 프로젝트 데이터는 `%LOCALAPPDATA%`에 저장되므로 새 폴더에서 실행해도 기존 로컬 프로젝트를 유지합니다.
+
+## v0.6.2 업데이트 복구
+
+- 앱 내 업데이트 도우미를 실행 파일에 내장했습니다. `apply-update.ps1`이 설치 폴더에 따로 없어도 SHA-256 검증 후 업데이트할 수 있습니다.
+- v0.6.0 앱에서 업데이트 도우미가 누락되어 업데이트가 실패하면, 전체 공식 ZIP을 새 폴더에 압축 해제하고 그 안의 `BoundaryCheck.exe`를 한 번 실행하세요. v0.6.0은 누락된 도우미를 자체 복구할 수 없습니다.
 
 ## v0.6.1 UI 수정
 
@@ -34,7 +39,7 @@ GitHub Releases에서 `BoundaryCheck-win-x64.zip`을 받아 압축을 풀고 `Bo
 
 ## 소스에서 빌드
 
-새 버전은 버전을 올리고 `v*.*.*` 태그를 push하면 GitHub Actions가 릴리스 파일을 만듭니다. 앱은 사용자가 **업데이트 확인**을 누른 경우에만 이 저장소의 최신 Release를 확인합니다. GitHub 릴리스 자산의 SHA-256 digest와 다운로드 파일을 대조하고, 성공한 경우에만 현재 폴더의 실행 파일을 교체합니다. 압축을 푼 프로그램 폴더에 쓰기 권한이 필요합니다.
+새 버전은 버전을 올리고 `v*.*.*` 태그를 push하면 GitHub Actions가 릴리스 파일을 만듭니다. 앱은 사용자가 **업데이트 확인**을 누른 경우에만 이 저장소의 최신 Release를 확인합니다. GitHub 릴리스 자산의 SHA-256 digest와 다운로드 파일을 대조하고, 성공한 경우에만 현재 폴더의 실행 파일을 교체합니다. 앱 폴더에 쓰기 권한이 필요합니다. 업데이트 도우미는 앱에 내장되어 있어 별도 스크립트 파일을 실행 폴더에 둘 필요가 없습니다.
 
 `.NET 10 Windows Desktop SDK`가 필요합니다.
 

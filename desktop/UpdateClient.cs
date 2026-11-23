@@ -120,10 +120,9 @@ internal static class UpdateClient
         if (names.Any(name => name.Contains('/') || name.Contains('\\') || name is "." or ".."))
             throw new InvalidDataException("업데이트 ZIP에 허용되지 않은 경로가 있습니다.");
         var allowed = new HashSet<string>(["BoundaryCheck.exe", "apply-update.ps1", "README.txt"], StringComparer.OrdinalIgnoreCase);
-        if (names.Length != allowed.Count || names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Length || names.Any(name => !allowed.Contains(name)))
+        if (names.Length is < 1 or > 3 || names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Length || names.Any(name => !allowed.Contains(name)))
             throw new InvalidDataException("업데이트 ZIP에 허용되지 않은 파일이 있습니다.");
-        if (!names.Contains("BoundaryCheck.exe", StringComparer.OrdinalIgnoreCase)
-            || !names.Contains("apply-update.ps1", StringComparer.OrdinalIgnoreCase))
-            throw new InvalidDataException("업데이트 ZIP에 앱 또는 업데이트 도우미가 없습니다.");
+        if (!names.Contains("BoundaryCheck.exe", StringComparer.OrdinalIgnoreCase))
+            throw new InvalidDataException("업데이트 ZIP에 프로그램 실행 파일이 없습니다.");
     }
 }

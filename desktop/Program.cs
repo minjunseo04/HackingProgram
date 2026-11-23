@@ -399,8 +399,6 @@ public sealed class MainForm : Form
             var releaseNotes = string.IsNullOrWhiteSpace(latest.Notes) ? "변경 내역이 등록되지 않았습니다." : latest.Notes.Trim();
             if (releaseNotes.Length > 900) releaseNotes = releaseNotes[..900] + "…";
             var installDirectory = AppContext.BaseDirectory;
-            var helper = Path.Combine(installDirectory, "apply-update.ps1");
-            if (!File.Exists(helper)) throw new InvalidOperationException("이 프로그램에는 업데이트 도우미가 없습니다. 웹사이트에서 최신 설치 파일을 다시 받아 주세요.");
             EnsureInstallDirectoryWritable(installDirectory);
 
             var install = MessageBox.Show(
@@ -413,6 +411,7 @@ public sealed class MainForm : Form
 
             var progress = new Progress<int>(percent => button.Text = $"다운로드 {percent}%");
             var archivePath = await UpdateClient.DownloadVerifiedPackageAsync(latest, progress);
+            var helper = MaterializeEmbeddedUpdateHelper();
             button.Text = "교체 준비 중…";
 
             var startInfo = new ProcessStartInfo("powershell.exe")
@@ -460,6 +459,23 @@ public sealed class MainForm : Form
         try { File.WriteAllText(probe, "update permission check"); }
         catch (UnauthorizedAccessException) { throw new InvalidOperationException("앱 폴더에 쓸 권한이 없습니다. ZIP을 사용자 폴더(예: 문서)에 풀어 다시 실행해 주세요."); }
         finally { if (File.Exists(probe)) File.Delete(probe); }
+    }
+
+    private static string MaterializeEmbeddedUpdateHelper()
+    {
+        const string resourceName = "BoundaryCheck.apply-update.ps1";
+        var helperDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "BoundaryCheck",
+            "Updates");
+        Directory.CreateDirectory(helperDirectory);
+
+        var helperPath = Path.Combine(helperDirectory, $"apply-update-{Guid.NewGuid():N}.ps1");
+        using var resource = typeof(Program).Assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException("앱에 내장된 업데이트 도우미를 찾을 수 없습니다. 공식 설치 ZIP을 다시 받아 주세요.");
+        using var destination = new FileStream(helperPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+        resource.CopyTo(destination);
+        return helperPath;
     }
 
     private static Panel Card() => UiTheme.CreateCard(1);

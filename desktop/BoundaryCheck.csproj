@@ -7,7 +7,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>BoundaryCheck</AssemblyName>
     <RootNamespace>BoundaryCheck</RootNamespace>
-    <Version>0.6.1</Version>
-    <AssemblyVersion>0.6.1.0</AssemblyVersion>
+    <Version>0.6.2</Version>
+    <AssemblyVersion>0.6.2.0</AssemblyVersion>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="apply-update.ps1" LogicalName="BoundaryCheck.apply-update.ps1" />
+  </ItemGroup>
 </Project>
