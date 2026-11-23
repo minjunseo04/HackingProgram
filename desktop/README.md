@@ -1,11 +1,17 @@
 # BoundaryCheck Windows desktop app
 
-- 현재 소스 버전: **0.6.0**
+- 현재 소스 버전: **0.6.1**
 - 공개 GitHub Release: [최신 릴리스](https://github.com/minjunseo04/HackingProgram/releases/latest)
 
 ## 실행
 
 GitHub Releases에서 `BoundaryCheck-win-x64.zip`을 받아 압축을 풀고 `BoundaryCheck.exe`를 실행합니다. Windows x64용 자체 포함 파일이라 별도 .NET 설치가 필요하지 않습니다.
+
+## v0.6.1 UI 수정
+
+- 설치된 Windows 글꼴 이름을 확인해 한국어 텍스트에 `맑은 고딕`을 사용합니다.
+- 화면 글자 크기와 프로젝트 입력 라벨 배치를 조정했습니다.
+- 기존 기능과 데이터 형식은 유지합니다.
 
 ## v0.6.0 기능
 

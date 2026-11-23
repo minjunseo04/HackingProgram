@@ -33,7 +33,7 @@ internal sealed class LocalFixtureDialog : Form
         Size = new Size(1240, 760);
         StartPosition = FormStartPosition.CenterParent;
         BackColor = UiTheme.Canvas;
-        Font = new Font("Segoe UI", 10F);
+        Font = UiTheme.BodyFont;
         _persistentWriteOptIn = LocalFixtureWriteSettings.IsEnabled();
 
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(26), Margin = new Padding(0), BackColor = UiTheme.Canvas };
@@ -50,7 +50,7 @@ internal sealed class LocalFixtureDialog : Form
         {
             Text = "내장된 가상 계정과 예제 문서만 실행합니다",
             Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI Semibold", 12F),
+            Font = UiTheme.SectionFont,
             ForeColor = UiTheme.Brand,
             TextAlign = ContentAlignment.MiddleLeft,
         }, 0, 0);
@@ -106,7 +106,7 @@ internal sealed class LocalFixtureDialog : Form
         _emptyState.TextAlign = ContentAlignment.MiddleCenter;
         _emptyState.ForeColor = UiTheme.MutedInk;
         _emptyState.BackColor = UiTheme.Surface;
-        _emptyState.Font = new Font("Segoe UI", 11F);
+        _emptyState.Font = UiTheme.BodyFont;
         resultsPanel.Controls.Add(_emptyState);
         root.Controls.Add(resultsPanel, 0, 2);
     }
