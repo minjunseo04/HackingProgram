@@ -17,7 +17,7 @@ internal sealed class LocalFixtureDialog : Form
     {
         AutoSize = true,
         Text = "이번 실행에서 내장 메모리 쓰기 검사 허용",
-        ForeColor = Color.FromArgb(54, 68, 60),
+        ForeColor = UiTheme.Ink,
     };
     private readonly Label _writeSettingHint = new();
     private readonly CancellationTokenSource _closing = new();
@@ -32,17 +32,17 @@ internal sealed class LocalFixtureDialog : Form
         MinimumSize = new Size(1000, 640);
         Size = new Size(1240, 760);
         StartPosition = FormStartPosition.CenterParent;
-        BackColor = Color.FromArgb(246, 248, 246);
+        BackColor = UiTheme.Canvas;
         Font = new Font("Segoe UI", 10F);
         _persistentWriteOptIn = LocalFixtureWriteSettings.IsEnabled();
 
-        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(22), Margin = new Padding(0) };
+        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(26), Margin = new Padding(0), BackColor = UiTheme.Canvas };
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 164));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 102));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Controls.Add(root);
 
-        var notice = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(232, 244, 238), Padding = new Padding(18, 12, 18, 12), Margin = new Padding(0, 0, 0, 8) };
+        var notice = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.BrandSoft, Padding = new Padding(18, 12, 18, 12), Margin = new Padding(0, 0, 0, 8) };
         var noticeLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
         noticeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
         noticeLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -51,14 +51,14 @@ internal sealed class LocalFixtureDialog : Form
             Text = "내장된 가상 계정과 예제 문서만 실행합니다",
             Dock = DockStyle.Fill,
             Font = new Font("Segoe UI Semibold", 12F),
-            ForeColor = Color.FromArgb(23, 76, 55),
+            ForeColor = UiTheme.Brand,
             TextAlign = ContentAlignment.MiddleLeft,
         }, 0, 0);
         noticeLayout.Controls.Add(new Label
         {
             Text = "내장 예제만 실행합니다. 저장 프로젝트·대상 주소·가져온 HAR/OpenAPI는 사용하지 않습니다. 요청은 임시 127.0.0.1 포트로만 보내며 프록시·자동 리디렉션을 사용하지 않습니다. 쓰기 검사는 설정·실행별 동의와 최종 확인 후 가상 메모리에서만 실행하고, 값은 예제 종료 후 폐기합니다. 응답 본문은 보고서에 저장하지 않습니다.",
             Dock = DockStyle.Fill,
-            ForeColor = Color.FromArgb(70, 91, 79),
+            ForeColor = UiTheme.Ink,
             TextAlign = ContentAlignment.TopLeft,
         }, 0, 1);
         notice.Controls.Add(noticeLayout);
@@ -82,7 +82,7 @@ internal sealed class LocalFixtureDialog : Form
         actionButtons.Controls.AddRange([_secureButton, _vulnerableButton, _saveReportButton, _openReportButton]);
         actions.Controls.Add(actionButtons, 0, 0);
         _status.Dock = DockStyle.Fill;
-        _status.ForeColor = Color.FromArgb(93, 107, 99);
+        _status.ForeColor = UiTheme.MutedInk;
         _status.TextAlign = ContentAlignment.MiddleLeft;
         _status.Padding = new Padding(8, 0, 0, 0);
         actions.Controls.Add(_status, 1, 0);
@@ -91,7 +91,7 @@ internal sealed class LocalFixtureDialog : Form
         writeControls.Controls.Add(_writeTestButton);
         actions.Controls.Add(writeControls, 0, 1);
         _writeSettingHint.Dock = DockStyle.Fill;
-        _writeSettingHint.ForeColor = Color.FromArgb(93, 107, 99);
+        _writeSettingHint.ForeColor = UiTheme.MutedInk;
         _writeSettingHint.TextAlign = ContentAlignment.MiddleLeft;
         _writeSettingHint.Padding = new Padding(8, 0, 0, 0);
         actions.Controls.Add(_writeSettingHint, 1, 1);
@@ -99,13 +99,14 @@ internal sealed class LocalFixtureDialog : Form
         root.Controls.Add(actions, 0, 1);
 
         ConfigureGrid();
-        var resultsPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Margin = new Padding(0) };
+        var resultsPanel = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.Surface, Margin = new Padding(0) };
         resultsPanel.Controls.Add(_grid);
         _emptyState.Text = "안전 예제 또는 취약 예제를 실행해 결과를 확인하세요";
         _emptyState.Dock = DockStyle.Fill;
         _emptyState.TextAlign = ContentAlignment.MiddleCenter;
-        _emptyState.ForeColor = Color.FromArgb(93, 107, 99);
-        _emptyState.BackColor = Color.White;
+        _emptyState.ForeColor = UiTheme.MutedInk;
+        _emptyState.BackColor = UiTheme.Surface;
+        _emptyState.Font = new Font("Segoe UI", 11F);
         resultsPanel.Controls.Add(_emptyState);
         root.Controls.Add(resultsPanel, 0, 2);
     }
@@ -120,17 +121,9 @@ internal sealed class LocalFixtureDialog : Form
         _grid.MultiSelect = false;
         _grid.RowHeadersVisible = false;
         _grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-        _grid.BackgroundColor = Color.White;
-        _grid.BorderStyle = BorderStyle.None;
-        _grid.GridColor = Color.FromArgb(235, 240, 236);
-        _grid.EnableHeadersVisualStyles = false;
-        _grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(243, 247, 244);
-        _grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(75, 91, 81);
-        _grid.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 9.5F);
-        _grid.ColumnHeadersHeight = 42;
-        _grid.RowTemplate.Height = 52;
-        _grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(232, 244, 238);
-        _grid.DefaultCellStyle.SelectionForeColor = Color.FromArgb(23, 76, 55);
+        UiTheme.StyleGrid(_grid);
+        _grid.ColumnHeadersHeight = 46;
+        _grid.RowTemplate.Height = 54;
         _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(LocalFixtureResult.Scenario), HeaderText = "검사 항목", Width = 155 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(LocalFixtureResult.Identity), HeaderText = "예제 신원", Width = 125 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(LocalFixtureResult.Method), HeaderText = "방식", Width = 58 });
@@ -146,7 +139,7 @@ internal sealed class LocalFixtureDialog : Form
             if (_grid.Columns[args.ColumnIndex].DataPropertyName != nameof(LocalFixtureResult.Verdict) || args.Value is not string verdict) return;
             (args.CellStyle.BackColor, args.CellStyle.ForeColor) = verdict switch
             {
-                "기대와 일치" => (Color.FromArgb(229, 242, 234), Color.FromArgb(23, 107, 80)),
+                "기대와 일치" => (UiTheme.BrandSoft, UiTheme.Brand),
                 "검토 필요" => (Color.FromArgb(253, 234, 232), Color.FromArgb(150, 48, 42)),
                 _ => (Color.FromArgb(255, 246, 222), Color.FromArgb(112, 84, 20)),
             };

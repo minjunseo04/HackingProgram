@@ -58,139 +58,317 @@ public sealed class MainForm : Form
     private readonly BindingList<Scenario> _scenarios = [];
     private readonly DataGridView _grid = new();
     private readonly Label _summary = new();
+    private readonly Label _requestMetric = new();
+    private readonly Label _identityMetric = new();
+    private readonly Label _ruleMetric = new();
+    private FlowLayoutPanel? _workspaceScroll;
+    private Panel? _requestCard;
     private bool _updatingWriteSettings;
 
     public MainForm()
     {
         Text = "BoundaryCheck";
         AutoScaleMode = AutoScaleMode.Dpi;
-        MinimumSize = new Size(1000, 760);
-        Size = new Size(1280, 900);
+        MinimumSize = new Size(1120, 760);
+        Size = new Size(1440, 960);
         StartPosition = FormStartPosition.CenterScreen;
-        BackColor = Color.FromArgb(246, 248, 246);
+        BackColor = UiTheme.Canvas;
         Font = new Font("Segoe UI", 10F);
         _allowLocalFixtureWrites.Checked = LocalFixtureWriteSettings.IsEnabled();
 
-        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(30, 22, 30, 24) };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 116));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 90));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 316));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        Controls.Add(root);
-
-        var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
-        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
-        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
-        var brand = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
-        brand.RowStyles.Add(new RowStyle(SizeType.Percent, 62));
-        brand.RowStyles.Add(new RowStyle(SizeType.Percent, 38));
-        brand.Controls.Add(new Label { Text = "BoundaryCheck", Font = new Font("Segoe UI Semibold", 23F), ForeColor = Color.FromArgb(23, 76, 55), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
-        brand.Controls.Add(new Label { Text = $"v{UpdateClient.CurrentVersion()} · 앱 권한 경계 점검", ForeColor = Color.FromArgb(93, 107, 99), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
-        header.Controls.Add(brand, 0, 0);
-        var headerActions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 34, 0, 0), Margin = new Padding(0) };
-        var updateButton = Button("업데이트 확인", false);
-        updateButton.Click += async (_, _) => await CheckForUpdatesAsync(updateButton);
-        var localBadge = new Label { Text = "●  로컬 저장", AutoSize = true, BackColor = Color.FromArgb(229, 242, 234), ForeColor = Color.FromArgb(23, 107, 80), Padding = new Padding(12, 9, 12, 9), Margin = new Padding(0, 2, 8, 0) };
-        headerActions.Controls.AddRange([updateButton, localBadge]);
-        header.Controls.Add(headerActions, 1, 0);
-        root.Controls.Add(header, 0, 0);
-
-        var privacy = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(232, 244, 238), Padding = new Padding(18, 12, 18, 12), Margin = new Padding(0, 4, 0, 8) };
-        var privacyCopy = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
-        privacyCopy.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        privacyCopy.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        privacyCopy.Controls.Add(new Label { Text = "프로젝트와 가져온 파일은 이 컴퓨터에 저장됩니다", Font = new Font("Segoe UI Semibold", 10.5F), ForeColor = Color.FromArgb(23, 76, 55), Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
-        privacyCopy.Controls.Add(new Label { Text = "업데이트 확인은 직접 눌러야 시작됩니다. GitHub는 IP와 앱 버전을 볼 수 있지만 프로젝트 자료는 전송되지 않습니다.", ForeColor = Color.FromArgb(70, 91, 79), Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft }, 0, 1);
-        privacy.Controls.Add(privacyCopy);
-        root.Controls.Add(privacy, 0, 1);
-
-        var project = Card();
-        var projectGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 6, Padding = new Padding(20, 12, 20, 14), Margin = new Padding(0) };
-        projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
-        projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
-        projectGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));
-        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));
-        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
-        projectGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
-        projectGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        projectGrid.Controls.Add(new Label { Text = "프로젝트·로컬 검사 설정", Font = new Font("Segoe UI Semibold", 12F), ForeColor = Color.FromArgb(34, 54, 43), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
-        projectGrid.SetColumnSpan(projectGrid.GetControlFromPosition(0, 0)!, 4);
-        projectGrid.Controls.Add(FieldLabel("프로젝트 이름"), 0, 1);
-        projectGrid.Controls.Add(StyleInput(_name), 1, 1);
-        projectGrid.Controls.Add(FieldLabel("대상 주소"), 2, 1);
-        projectGrid.Controls.Add(StyleInput(_origin), 3, 1);
-        projectGrid.Controls.Add(FieldLabel("API 경로"), 0, 2);
-        projectGrid.Controls.Add(StyleInput(_prefix), 1, 2);
-        var hint = new Label { Text = "가져온 요청은 실행하지 않습니다. 쓰기 검사는 내장 127.0.0.1 예제에만 별도 동의 후 적용됩니다.", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(93, 107, 99), TextAlign = ContentAlignment.MiddleLeft };
-        projectGrid.Controls.Add(hint, 0, 3);
-        projectGrid.SetColumnSpan(hint, 4);
-        projectGrid.Controls.Add(_allowLocalFixtureWrites, 0, 4);
-        projectGrid.SetColumnSpan(_allowLocalFixtureWrites, 4);
-        _allowLocalFixtureWrites.CheckedChanged += (_, _) => SaveLocalFixtureWriteSetting();
-        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Padding = new Padding(0, 8, 0, 0), Margin = new Padding(0) };
-        var harButton = Button("HAR 가져오기", false);
-        harButton.Click += (_, _) => ImportFile(true);
-        var openApiButton = Button("OpenAPI 가져오기", false);
-        openApiButton.Click += (_, _) => ImportFile(false);
-        var saveButton = Button("프로젝트 저장", true);
-        saveButton.Click += (_, _) => SaveProject(showMessage: true);
-        actions.Controls.AddRange([harButton, openApiButton, saveButton]);
-        projectGrid.Controls.Add(actions, 0, 5);
-        projectGrid.SetColumnSpan(actions, 4);
-        project.Controls.Add(projectGrid);
-        root.Controls.Add(project, 0, 2);
-
-        var scenarioCard = Card();
-        var scenarioLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(20, 14, 20, 14), Margin = new Padding(0) };
-        scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-        scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        scenarioLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
-        var scenarioHeader = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 5, RowCount = 1, Margin = new Padding(0) };
-        scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        scenarioHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        scenarioHeader.Controls.Add(new Label { Text = "요청 목록", Font = new Font("Segoe UI Semibold", 14F), ForeColor = Color.FromArgb(34, 54, 43), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
-        var identityButton = Button("테스트 신원 관리", false);
-        identityButton.Click += (_, _) => ManageIdentities();
-        scenarioHeader.Controls.Add(identityButton, 1, 0);
-        var localFixtureButton = Button("로컬 예제 실행", false);
-        localFixtureButton.Click += (_, _) =>
-        {
-            using var dialog = new LocalFixtureDialog();
-            dialog.ShowDialog(this);
-        };
-        scenarioHeader.Controls.Add(localFixtureButton, 2, 0);
-        var duplicateButton = Button("선택 요청 복제", false);
-        duplicateButton.Click += (_, _) => DuplicateSelectedScenario();
-        scenarioHeader.Controls.Add(duplicateButton, 3, 0);
-        var addButton = Button("요청 직접 추가", false);
-        addButton.Click += (_, _) => { _scenarios.Add(new Scenario()); UpdateSummary(); SaveProject(false); };
-        scenarioHeader.Controls.Add(addButton, 4, 0);
-        scenarioLayout.Controls.Add(scenarioHeader, 0, 0);
-
+        var shell = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0), BackColor = UiTheme.Canvas };
+        shell.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 256));
+        shell.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        shell.Controls.Add(BuildWorkspace(), 1, 0);
+        shell.Controls.Add(BuildSidebar(), 0, 0);
+        Controls.Add(shell);
         ConfigureGrid();
-        var scenarioBody = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Margin = new Padding(0) };
-        scenarioBody.Controls.Add(_grid);
-        var emptyState = new Label { Text = "아직 요청이 없어요\nHAR 또는 OpenAPI 파일을 가져와 첫 요청 목록을 만들어 보세요\n테스트 신원은 먼저 만들거나 나중에 연결할 수 있어요", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, ForeColor = Color.FromArgb(93, 107, 99), Font = new Font("Segoe UI", 12F), BackColor = Color.White };
-        scenarioBody.Controls.Add(emptyState);
-        _emptyState = emptyState;
-        scenarioLayout.Controls.Add(scenarioBody, 0, 1);
-        _summary.Dock = DockStyle.Fill;
-        _summary.ForeColor = Color.FromArgb(93, 107, 99);
-        _summary.TextAlign = ContentAlignment.MiddleLeft;
-        scenarioLayout.Controls.Add(_summary, 0, 2);
-        scenarioCard.Controls.Add(scenarioLayout);
-        root.Controls.Add(scenarioCard, 0, 3);
-
         LoadProject();
     }
 
     private readonly Label _emptyState = new();
+
+    private Control BuildSidebar()
+    {
+        var sidebar = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.BrandDark, Padding = new Padding(18, 22, 18, 18) };
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = UiTheme.BrandDark, Margin = new Padding(0) };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 176));
+
+        var brand = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
+        brand.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 42));
+        brand.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        var mark = new Label { Text = "B", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI Semibold", 15F), ForeColor = Color.White, BackColor = UiTheme.Brand };
+        brand.Controls.Add(mark, 0, 0);
+        var brandCopy = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(6, 2, 0, 0) };
+        brandCopy.RowStyles.Add(new RowStyle(SizeType.Percent, 58));
+        brandCopy.RowStyles.Add(new RowStyle(SizeType.Percent, 42));
+        brandCopy.Controls.Add(new Label { Text = "BoundaryCheck", Dock = DockStyle.Fill, ForeColor = Color.White, Font = new Font("Segoe UI Semibold", 8.5F), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        brandCopy.Controls.Add(new Label { Text = "API 권한 경계 점검", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(183, 201, 190), Font = new Font("Segoe UI", 8.5F), TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
+        brand.Controls.Add(brandCopy, 1, 0);
+        layout.Controls.Add(brand, 0, 0);
+
+        var nav = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = false, BackColor = UiTheme.BrandDark, Margin = new Padding(0) };
+        nav.Controls.Add(SidebarSectionLabel("작업 공간"));
+        var requests = SidebarAction("요청 목록", active: true);
+        requests.Click += (_, _) => { if (_requestCard is not null) _workspaceScroll?.ScrollControlIntoView(_requestCard); };
+        nav.Controls.Add(requests);
+        var identities = SidebarAction("테스트 신원", active: false);
+        identities.Click += (_, _) => ManageIdentities();
+        nav.Controls.Add(identities);
+        var fixtures = SidebarAction("로컬 예제", active: false);
+        fixtures.Click += (_, _) => OpenLocalFixture();
+        nav.Controls.Add(fixtures);
+        layout.Controls.Add(nav, 0, 1);
+
+        var footer = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = new Padding(0) };
+        footer.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
+        footer.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+        footer.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        footer.Controls.Add(new Label { Text = "프로젝트와 검사 자료는\n이 PC에 저장됩니다.", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(193, 208, 199), Font = new Font("Segoe UI", 8.5F), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        var save = SidebarAction("프로젝트 저장", active: true);
+        save.Height = 40;
+        save.Click += (_, _) => SaveProject(showMessage: true);
+        footer.Controls.Add(save, 0, 1);
+        footer.Controls.Add(new Label { Text = $"v{UpdateClient.CurrentVersion()}", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(149, 170, 157), Font = new Font("Segoe UI", 8.5F), TextAlign = ContentAlignment.BottomLeft }, 0, 2);
+        layout.Controls.Add(footer, 0, 2);
+        sidebar.Controls.Add(layout);
+        return sidebar;
+    }
+
+    private Control BuildWorkspace()
+    {
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = UiTheme.Canvas, Margin = new Padding(0) };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = UiTheme.Surface, Padding = new Padding(30, 18, 30, 16), Margin = new Padding(0) };
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 300));
+        var heading = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
+        heading.RowStyles.Add(new RowStyle(SizeType.Percent, 60));
+        heading.RowStyles.Add(new RowStyle(SizeType.Percent, 40));
+        heading.Controls.Add(new Label { Text = "프로젝트 작업 공간", Dock = DockStyle.Fill, ForeColor = UiTheme.Ink, Font = new Font("Segoe UI Semibold", 19F), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        heading.Controls.Add(new Label { Text = "요청과 테스트 계정을 정리하고 접근 경계를 비교하세요.", Dock = DockStyle.Fill, ForeColor = UiTheme.MutedInk, Font = new Font("Segoe UI", 9.5F), TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
+        header.Controls.Add(heading, 0, 0);
+        var headerActions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Padding = new Padding(0, 12, 0, 0), Margin = new Padding(0) };
+        headerActions.Controls.Add(new Label { Text = "●  로컬 저장", AutoSize = true, BackColor = UiTheme.BrandSoft, ForeColor = UiTheme.Brand, Padding = new Padding(12, 9, 12, 9), Margin = new Padding(0, 3, 8, 0), Font = new Font("Segoe UI Semibold", 9F) });
+        var updateButton = Button("업데이트 확인", false);
+        updateButton.Click += async (_, _) => await CheckForUpdatesAsync(updateButton);
+        headerActions.Controls.Add(updateButton);
+        header.Controls.Add(headerActions, 1, 0);
+        layout.Controls.Add(header, 0, 0);
+
+        var body = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(28, 22, 28, 22), BackColor = UiTheme.Canvas, Margin = new Padding(0) };
+        body.Controls.Add(BuildPrivacyBanner());
+        body.Controls.Add(BuildMetricsRow());
+        body.Controls.Add(BuildProjectCard());
+        _requestCard = BuildRequestCard();
+        body.Controls.Add(_requestCard);
+        body.SizeChanged += (_, _) => FitWorkspaceCards(body);
+        FitWorkspaceCards(body);
+        _workspaceScroll = body;
+        layout.Controls.Add(body, 0, 1);
+        return layout;
+    }
+
+    private static Panel BuildPrivacyBanner()
+    {
+        var banner = new Panel { Height = 76, BackColor = UiTheme.BrandSoft, Padding = new Padding(18, 10, 18, 10), Margin = new Padding(0, 0, 0, 14) };
+        var copy = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
+        copy.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 118));
+        copy.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        copy.Controls.Add(new Label { Text = "내 컴퓨터\n우선 저장", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = UiTheme.Brand, Font = new Font("Segoe UI Semibold", 10F) }, 0, 0);
+        copy.Controls.Add(new Label { Text = "프로젝트와 가져온 파일은 이 PC에만 저장됩니다. 업데이트 확인을 직접 누른 경우에만 GitHub에 연결하며, 프로젝트 자료는 전송하지 않습니다.", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = UiTheme.Ink, Font = new Font("Segoe UI", 9F) }, 1, 0);
+        banner.Controls.Add(copy);
+        return banner;
+    }
+
+    private TableLayoutPanel BuildMetricsRow()
+    {
+        var row = new TableLayoutPanel { Height = 106, ColumnCount = 3, RowCount = 1, BackColor = UiTheme.Canvas, Margin = new Padding(0, 0, 0, 14) };
+        for (var index = 0; index < 3; index++) row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / 3));
+        row.Controls.Add(MetricCard("요청 템플릿", _requestMetric, "가져오거나 직접 추가한 경로"), 0, 0);
+        row.Controls.Add(MetricCard("테스트 신원", _identityMetric, "조직·역할별 예제 계정"), 1, 0);
+        row.Controls.Add(MetricCard("기대 접근 규칙", _ruleMetric, "허용 또는 거부를 지정한 요청"), 2, 0);
+        return row;
+    }
+
+    private static Panel MetricCard(string title, Label value, string detail)
+    {
+        var card = UiTheme.CreateCard(14);
+        card.Margin = new Padding(0, 0, 10, 0);
+        card.Height = 106;
+        var content = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = new Padding(0) };
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
+        content.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
+        content.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, ForeColor = UiTheme.MutedInk, Font = new Font("Segoe UI", 9F), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        value.Dock = DockStyle.Fill;
+        value.ForeColor = UiTheme.Ink;
+        value.Font = new Font("Segoe UI Semibold", 21F);
+        value.TextAlign = ContentAlignment.MiddleLeft;
+        content.Controls.Add(value, 0, 1);
+        content.Controls.Add(new Label { Text = detail, Dock = DockStyle.Fill, ForeColor = UiTheme.MutedInk, Font = new Font("Segoe UI", 8F), TextAlign = ContentAlignment.MiddleLeft }, 0, 2);
+        card.Controls.Add(content);
+        card.Paint += (_, args) => UiTheme.DrawCardBorder(card, args);
+        return card;
+    }
+
+    private Panel BuildProjectCard()
+    {
+        var card = UiTheme.CreateCard(18);
+        card.Height = 250;
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Margin = new Padding(0) };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.Controls.Add(SectionHeading("프로젝트 설정", "이 PC에 저장되는 현재 작업 범위"), 0, 0);
+
+        var fields = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6, RowCount = 2, Margin = new Padding(0) };
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 86));
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 36));
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 76));
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 58));
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 22));
+        fields.RowStyles.Add(new RowStyle(SizeType.Absolute, 23));
+        fields.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        fields.Controls.Add(FieldLabel("프로젝트 이름"), 0, 0);
+        fields.Controls.Add(FieldLabel("대상 주소"), 2, 0);
+        fields.Controls.Add(FieldLabel("API 경로"), 4, 0);
+        UiTheme.StyleInput(_name);
+        UiTheme.StyleInput(_origin);
+        UiTheme.StyleInput(_prefix);
+        fields.Controls.Add(_name, 1, 1);
+        fields.Controls.Add(_origin, 3, 1);
+        fields.Controls.Add(_prefix, 5, 1);
+        layout.Controls.Add(fields, 0, 1);
+
+        _allowLocalFixtureWrites.ForeColor = UiTheme.Ink;
+        _allowLocalFixtureWrites.Margin = new Padding(2, 7, 12, 0);
+        _allowLocalFixtureWrites.CheckedChanged += (_, _) => SaveLocalFixtureWriteSetting();
+        var writeSettings = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, Margin = new Padding(0), Padding = new Padding(0, 4, 0, 0) };
+        writeSettings.Controls.Add(_allowLocalFixtureWrites);
+        writeSettings.Controls.Add(new Label { Text = "기본 꺼짐 · 내장 127.0.0.1 예제에만 적용", AutoSize = true, ForeColor = UiTheme.WarningInk, BackColor = UiTheme.WarningSoft, Padding = new Padding(9, 5, 9, 5), Margin = new Padding(4, 1, 0, 0), Font = new Font("Segoe UI", 8.5F) });
+        layout.Controls.Add(writeSettings, 0, 2);
+
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Margin = new Padding(0), Padding = new Padding(0, 4, 0, 0) };
+        var saveButton = Button("설정 저장", true);
+        saveButton.Click += (_, _) => SaveProject(showMessage: true);
+        actions.Controls.Add(saveButton);
+        layout.Controls.Add(actions, 0, 3);
+        card.Controls.Add(layout);
+        card.Paint += (_, args) => UiTheme.DrawCardBorder(card, args);
+        return card;
+    }
+
+    private Panel BuildRequestCard()
+    {
+        var card = UiTheme.CreateCard(18);
+        card.Height = 504;
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Margin = new Padding(0) };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        layout.Controls.Add(SectionHeading("요청 목록", "요청별 테스트 신원과 기대 접근값을 설정하세요."), 0, 0);
+
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, Margin = new Padding(0), Padding = new Padding(0, 4, 0, 0) };
+        var harButton = Button("HAR 가져오기", false);
+        harButton.Click += (_, _) => ImportFile(true);
+        var openApiButton = Button("OpenAPI 가져오기", false);
+        openApiButton.Click += (_, _) => ImportFile(false);
+        var duplicateButton = Button("선택 요청 복제", false);
+        duplicateButton.Click += (_, _) => DuplicateSelectedScenario();
+        var addButton = Button("요청 직접 추가", true);
+        addButton.Click += (_, _) => { _scenarios.Add(new Scenario()); UpdateSummary(); SaveProject(false); };
+        actions.Controls.AddRange([harButton, openApiButton, duplicateButton, addButton]);
+        layout.Controls.Add(actions, 0, 1);
+
+        var body = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.Surface, Margin = new Padding(0) };
+        _grid.Dock = DockStyle.Fill;
+        body.Controls.Add(_grid);
+        _emptyState.Text = "아직 요청이 없습니다\nHAR 또는 OpenAPI를 가져오거나 요청을 직접 추가하세요.";
+        _emptyState.Dock = DockStyle.Fill;
+        _emptyState.TextAlign = ContentAlignment.MiddleCenter;
+        _emptyState.ForeColor = UiTheme.MutedInk;
+        _emptyState.Font = new Font("Segoe UI", 11F);
+        _emptyState.BackColor = UiTheme.Surface;
+        body.Controls.Add(_emptyState);
+        layout.Controls.Add(body, 0, 2);
+
+        _summary.Dock = DockStyle.Fill;
+        _summary.ForeColor = UiTheme.MutedInk;
+        _summary.TextAlign = ContentAlignment.MiddleLeft;
+        _summary.Font = new Font("Segoe UI", 8.5F);
+        layout.Controls.Add(_summary, 0, 3);
+        card.Controls.Add(layout);
+        card.Paint += (_, args) => UiTheme.DrawCardBorder(card, args);
+        return card;
+    }
+
+    private static Control SectionHeading(string title, string detail)
+    {
+        var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
+        row.RowStyles.Add(new RowStyle(SizeType.Percent, 56));
+        row.RowStyles.Add(new RowStyle(SizeType.Percent, 44));
+        row.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, ForeColor = UiTheme.Ink, Font = new Font("Segoe UI Semibold", 12F), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        row.Controls.Add(new Label { Text = detail, Dock = DockStyle.Fill, ForeColor = UiTheme.MutedInk, Font = new Font("Segoe UI", 8.5F), TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
+        return row;
+    }
+
+    private void FitWorkspaceCards(FlowLayoutPanel body)
+    {
+        var width = Math.Max(720, body.ClientSize.Width - body.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 4);
+        foreach (Control control in body.Controls) control.Width = width;
+        if (body.Controls.Count > 1 && body.Controls[1] is TableLayoutPanel metrics)
+        {
+            var tileWidth = Math.Max(200, (width - 30) / 3);
+            foreach (Control tile in metrics.Controls) tile.Width = tileWidth;
+        }
+    }
+
+    private static Label SidebarSectionLabel(string text) => new()
+    {
+        Text = text,
+        Width = 212,
+        Height = 34,
+        Margin = new Padding(4, 2, 0, 8),
+        ForeColor = Color.FromArgb(149, 170, 157),
+        Font = new Font("Segoe UI Semibold", 8F),
+        TextAlign = ContentAlignment.MiddleLeft,
+    };
+
+    private static Button SidebarAction(string text, bool active)
+    {
+        var button = new Button
+        {
+            Text = text,
+            Width = 212,
+            Height = 44,
+            AutoSize = false,
+            FlatStyle = FlatStyle.Flat,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Padding = new Padding(14, 0, 8, 0),
+            Margin = new Padding(0, 0, 0, 6),
+            BackColor = active ? Color.FromArgb(35, 76, 57) : UiTheme.BrandDark,
+            ForeColor = Color.FromArgb(232, 239, 234),
+            Font = new Font("Segoe UI Semibold", 9.5F),
+            Cursor = Cursors.Hand,
+        };
+        button.FlatAppearance.BorderSize = 0;
+        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(42, 82, 62);
+        return button;
+    }
+
+    private void OpenLocalFixture()
+    {
+        using var dialog = new LocalFixtureDialog();
+        dialog.ShowDialog(this);
+    }
 
     private async Task CheckForUpdatesAsync(Button button)
     {
@@ -288,17 +466,18 @@ public sealed class MainForm : Form
         finally { if (File.Exists(probe)) File.Delete(probe); }
     }
 
-    private static Panel Card() => new() { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1), Margin = new Padding(0, 4, 0, 4) };
-    private static Label FieldLabel(string text) => new() { Text = text, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Color.FromArgb(54, 68, 60), Font = new Font("Segoe UI", 9.5F) };
-    private static TextBox StyleInput(TextBox input) { input.Dock = DockStyle.Fill; input.Margin = new Padding(2, 5, 12, 5); input.BorderStyle = BorderStyle.FixedSingle; input.BackColor = Color.FromArgb(251, 252, 251); return input; }
+    private static Panel Card() => UiTheme.CreateCard(1);
+    private static Label FieldLabel(string text) => new() { Text = text, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = UiTheme.MutedInk, Font = new Font("Segoe UI", 8.5F) };
+    private static TextBox StyleInput(TextBox input) { UiTheme.StyleInput(input); return input; }
 
     internal static Button Button(string text, bool primary)
     {
-        var button = new Button { Text = text, AutoSize = true, Height = 40, FlatStyle = FlatStyle.Flat, Padding = new Padding(14, 3, 14, 3), Margin = new Padding(0, 0, 10, 0), Cursor = Cursors.Hand, Font = new Font("Segoe UI Semibold", 9.5F) };
+        var button = new Button { Text = text, AutoSize = true, Height = 40, FlatStyle = FlatStyle.Flat, Padding = new Padding(14, 3, 14, 3), Margin = new Padding(0, 0, 8, 0), Cursor = Cursors.Hand, Font = new Font("Segoe UI Semibold", 9F) };
         button.FlatAppearance.BorderSize = primary ? 0 : 1;
-        button.FlatAppearance.BorderColor = Color.FromArgb(221, 229, 223);
-        button.BackColor = primary ? Color.FromArgb(23, 107, 80) : Color.White;
-        button.ForeColor = primary ? Color.White : Color.FromArgb(35, 54, 44);
+        button.FlatAppearance.BorderColor = UiTheme.Border;
+        button.FlatAppearance.MouseOverBackColor = primary ? Color.FromArgb(17, 88, 64) : UiTheme.SurfaceMuted;
+        button.BackColor = primary ? UiTheme.Brand : UiTheme.Surface;
+        button.ForeColor = primary ? Color.White : UiTheme.Ink;
         return button;
     }
 
@@ -308,31 +487,25 @@ public sealed class MainForm : Form
         _grid.AutoGenerateColumns = false;
         _grid.AllowUserToAddRows = false;
         _grid.RowHeadersVisible = false;
-        _grid.BackgroundColor = Color.White;
-        _grid.BorderStyle = BorderStyle.None;
-        _grid.GridColor = Color.FromArgb(235, 240, 236);
-        _grid.EnableHeadersVisualStyles = false;
-        _grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(243, 247, 244);
-        _grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(75, 91, 81);
-        _grid.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 9.5F);
-        _grid.ColumnHeadersHeight = 44;
-        _grid.RowTemplate.Height = 46;
-        _grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(232, 244, 238);
-        _grid.DefaultCellStyle.SelectionForeColor = Color.FromArgb(23, 76, 55);
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Method), HeaderText = "방식", Width = 110, ReadOnly = true });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Path), HeaderText = "요청 경로", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
+        _grid.AllowUserToAddRows = false;
+        _grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+        _grid.MultiSelect = false;
+        _grid.BackgroundColor = UiTheme.Surface;
+        UiTheme.StyleGrid(_grid);
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Method), HeaderText = "방식", Width = 92, ReadOnly = true });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Path), HeaderText = "요청 경로", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, MinimumWidth = 180, ReadOnly = true });
         _grid.Columns.Add(new DataGridViewComboBoxColumn
         {
             Name = "Identity",
             DataPropertyName = nameof(Scenario.IdentityId),
             HeaderText = "테스트 신원",
-            Width = 220,
+            Width = 195,
             DataSource = IdentityChoicesForProject(),
             ValueMember = nameof(IdentityChoice.Id),
             DisplayMember = nameof(IdentityChoice.Label),
         });
-        _grid.Columns.Add(new DataGridViewComboBoxColumn { DataPropertyName = nameof(Scenario.Expectation), HeaderText = "기대 접근", Width = 165, DataSource = new[] { "미지정", "허용", "거부" } });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Occurrences), HeaderText = "발견 횟수", Width = 125, ReadOnly = true });
+        _grid.Columns.Add(new DataGridViewComboBoxColumn { DataPropertyName = nameof(Scenario.Expectation), HeaderText = "기대 접근", Width = 142, DataSource = new[] { "미지정", "허용", "거부" } });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Scenario.Occurrences), HeaderText = "횟수", Width = 78, ReadOnly = true });
         _grid.DataSource = _scenarios;
         _grid.CellValueChanged += (_, _) => { UpdateSummary(); SaveProject(false); };
         _grid.CurrentCellDirtyStateChanged += (_, _) => { if (_grid.IsCurrentCellDirty) _grid.CommitEdit(DataGridViewDataErrorContexts.Commit); };
@@ -580,6 +753,9 @@ public sealed class MainForm : Form
         _grid.Visible = _scenarios.Count > 0;
         var assigned = _scenarios.Count(s => !string.IsNullOrEmpty(s.IdentityId));
         var specified = _scenarios.Count(s => s.Expectation != "미지정");
+        _requestMetric.Text = _scenarios.Count.ToString();
+        _identityMetric.Text = _identities.Count.ToString();
+        _ruleMetric.Text = specified.ToString();
         _summary.Text = $"요청 {_scenarios.Count}개 · 테스트 신원 {_identities.Count}개 · 신원 연결 {assigned}개 · 기대 접근값 지정 {specified}개 · 자료는 이 PC에 저장";
     }
 
@@ -608,13 +784,13 @@ internal sealed class TestIdentityDialog : Form
 
         Text = "테스트 신원 관리";
         AutoScaleMode = AutoScaleMode.Dpi;
-        MinimumSize = new Size(680, 500);
-        Size = new Size(760, 560);
+        MinimumSize = new Size(720, 520);
+        Size = new Size(820, 600);
         StartPosition = FormStartPosition.CenterParent;
-        BackColor = Color.FromArgb(246, 248, 246);
+        BackColor = UiTheme.Canvas;
         Font = new Font("Segoe UI", 10F);
 
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, Padding = new Padding(22), BackColor = Color.White };
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, Padding = new Padding(24), BackColor = UiTheme.Canvas };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
@@ -623,7 +799,7 @@ internal sealed class TestIdentityDialog : Form
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
         Controls.Add(layout);
 
-        var title = new Label { Text = "테스트 신원", Font = new Font("Segoe UI Semibold", 15F), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Color.FromArgb(23, 76, 55) };
+        var title = new Label { Text = "테스트 신원", Font = new Font("Segoe UI Semibold", 17F), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = UiTheme.Ink };
         layout.Controls.Add(title, 0, 0);
         layout.SetColumnSpan(title, 2);
 
@@ -631,6 +807,10 @@ internal sealed class TestIdentityDialog : Form
         {
             if (args.ListItem is TestIdentity identity) args.Value = string.IsNullOrWhiteSpace(FormatIdentity(identity)) ? "이름 없는 신원" : FormatIdentity(identity);
         };
+        _list.BackColor = UiTheme.Surface;
+        _list.ForeColor = UiTheme.Ink;
+        _list.BorderStyle = BorderStyle.FixedSingle;
+        _list.Font = new Font("Segoe UI", 9.5F);
         _list.SelectedIndexChanged += (_, _) => LoadSelection();
         layout.Controls.Add(_list, 0, 1);
 
@@ -644,9 +824,11 @@ internal sealed class TestIdentityDialog : Form
         AddField(fields, "역할", _role, 2);
         var privacy = new Label
         {
-            Text = "이 버전은 이름·조직·역할만 관리합니다. 로그인 비밀번호, 토큰 등 인증 정보는 입력하거나 저장하지 않습니다. 신원을 삭제하면 연결된 요청의 신원과 기대 접근값이 미지정으로 돌아갑니다.",
+            Text = "비밀번호·토큰 같은 인증 비밀은 입력하지 마세요. 신원을 삭제하면 연결된 요청의 신원과 기대 접근값이 미지정으로 초기화됩니다.",
             Dock = DockStyle.Fill,
-            ForeColor = Color.FromArgb(93, 107, 99),
+            ForeColor = UiTheme.MutedInk,
+            BackColor = UiTheme.SurfaceMuted,
+            Padding = new Padding(12),
             TextAlign = ContentAlignment.TopLeft,
         };
         fields.Controls.Add(privacy, 0, 3);
@@ -680,9 +862,9 @@ internal sealed class TestIdentityDialog : Form
 
     private static void AddField(TableLayoutPanel fields, string label, TextBox input, int row)
     {
-        fields.Controls.Add(new Label { Text = label, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Color.FromArgb(54, 68, 60) }, 0, row);
-        input.Dock = DockStyle.Fill;
-        input.Margin = new Padding(2, 7, 2, 7);
+        fields.Controls.Add(new Label { Text = label, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = UiTheme.MutedInk }, 0, row);
+        UiTheme.StyleInput(input);
+        input.Margin = new Padding(2, 6, 2, 6);
         fields.Controls.Add(input, 1, row);
     }
 
