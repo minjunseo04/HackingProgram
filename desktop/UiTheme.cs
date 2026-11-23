@@ -24,6 +24,7 @@ internal static class UiTheme
     public static readonly Font ButtonFont = new(FontFamily, 10F);
     public static readonly Font PageTitleFont = new(FontFamily, 18F, FontStyle.Bold);
     public static readonly Font SectionFont = new(FontFamily, 12.5F, FontStyle.Bold);
+    public static readonly Font StepFont = new(FontFamily, 10.5F, FontStyle.Bold);
     public static readonly Font MetricFont = new(FontFamily, 16F, FontStyle.Bold);
     public static readonly Font GridFont = new(FontFamily, 10F);
     public static readonly Font GridHeaderFont = new(FontFamily, 10F, FontStyle.Bold);
@@ -67,6 +68,8 @@ internal static class UiTheme
         grid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
         grid.ColumnHeadersDefaultCellStyle.BackColor = SurfaceMuted;
         grid.ColumnHeadersDefaultCellStyle.ForeColor = MutedInk;
+        grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = SurfaceMuted;
+        grid.ColumnHeadersDefaultCellStyle.SelectionForeColor = MutedInk;
         grid.ColumnHeadersDefaultCellStyle.Font = GridHeaderFont;
         grid.ColumnHeadersDefaultCellStyle.Padding = new Padding(9, 0, 9, 0);
         grid.ColumnHeadersHeight = 42;

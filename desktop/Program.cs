@@ -51,17 +51,17 @@ internal sealed class MainForm : DpiAwareForm
     private readonly CheckBox _allowLocalFixtureWrites = new()
     {
         AutoSize = true,
-        Text = "내장 예제 메모리 쓰기 검사 허용 (기본 꺼짐)",
+        Text = "내장 예제 쓰기 허용 (고급 · 기본 꺼짐)",
         ForeColor = Color.FromArgb(54, 68, 60),
     };
     private readonly List<TestIdentity> _identities = [];
     private readonly BindingList<Scenario> _scenarios = [];
     private readonly DataGridView _grid = new();
     private readonly Label _summary = new();
-    private readonly Label _requestMetric = new();
-    private readonly Label _identityMetric = new();
-    private readonly Label _ruleMetric = new();
+    private readonly Label _requestStepStatus = new();
+    private readonly Label _identityStepStatus = new();
     private FlowLayoutPanel? _workspaceScroll;
+    private Panel? _capabilityBanner;
     private Panel? _requestCard;
     private bool _updatingWriteSettings;
 
@@ -127,8 +127,11 @@ internal sealed class MainForm : DpiAwareForm
         layout.Controls.Add(brand, 0, 0);
 
         var nav = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = false, BackColor = UiTheme.BrandDark, Margin = new Padding(0) };
-        nav.Controls.Add(SidebarSectionLabel("작업 공간"));
-        var requests = SidebarAction("요청 목록", active: true);
+        nav.Controls.Add(SidebarSectionLabel("시작 순서"));
+        var start = SidebarAction("처음 시작", active: true);
+        start.Click += (_, _) => { if (_capabilityBanner is not null) _workspaceScroll?.ScrollControlIntoView(_capabilityBanner); };
+        nav.Controls.Add(start);
+        var requests = SidebarAction("요청 목록", active: false);
         requests.Click += (_, _) => { if (_requestCard is not null) _workspaceScroll?.ScrollControlIntoView(_requestCard); };
         nav.Controls.Add(requests);
         var identities = SidebarAction("테스트 신원", active: false);
@@ -161,8 +164,8 @@ internal sealed class MainForm : DpiAwareForm
         var heading = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
         heading.RowStyles.Add(new RowStyle(SizeType.Percent, 60));
         heading.RowStyles.Add(new RowStyle(SizeType.Percent, 40));
-        heading.Controls.Add(new Label { Text = "프로젝트 작업 공간", Dock = DockStyle.Fill, ForeColor = UiTheme.Ink, Font = UiTheme.PageTitleFont, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
-        heading.Controls.Add(new Label { Text = "요청 경로와 테스트 신원별 접근 규칙을 관리합니다.", Dock = DockStyle.Fill, ForeColor = UiTheme.MutedInk, Font = UiTheme.BodyFont, TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
+        heading.Controls.Add(new Label { Text = "권한 점검 시작", Dock = DockStyle.Fill, ForeColor = UiTheme.Ink, Font = UiTheme.PageTitleFont, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        heading.Controls.Add(new Label { Text = "요청을 정리하고 테스트 신원별 기대 접근값을 준비합니다.", Dock = DockStyle.Fill, ForeColor = UiTheme.MutedInk, Font = UiTheme.BodyFont, TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
         header.Controls.Add(heading, 0, 0);
         var headerActions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 8, 0, 0), Margin = new Padding(0) };
         var updateButton = Button("업데이트 확인", false);
@@ -175,9 +178,10 @@ internal sealed class MainForm : DpiAwareForm
         layout.Controls.Add(header, 0, 0);
 
         var body = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(24, 18, 24, 18), BackColor = UiTheme.Canvas, Margin = new Padding(0) };
-        body.Controls.Add(BuildPrivacyBanner());
-        body.Controls.Add(BuildMetricsRow());
+        _capabilityBanner = BuildCapabilityBanner();
+        body.Controls.Add(_capabilityBanner);
         body.Controls.Add(BuildProjectCard());
+        body.Controls.Add(BuildGettingStartedCard());
         _requestCard = BuildRequestCard();
         body.Controls.Add(_requestCard);
         body.SizeChanged += (_, _) => FitWorkspaceCards(body);
@@ -187,49 +191,84 @@ internal sealed class MainForm : DpiAwareForm
         return layout;
     }
 
-    private static Panel BuildPrivacyBanner()
+    private static Panel BuildCapabilityBanner()
     {
-        var banner = new Panel { Height = 58, BackColor = UiTheme.SurfaceMuted, Padding = new Padding(15, 8, 15, 8), Margin = new Padding(0, 0, 0, 10) };
+        var banner = new Panel { Height = 78, BackColor = UiTheme.WarningSoft, Padding = new Padding(16, 9, 16, 9), Margin = new Padding(0, 0, 0, 10) };
         var copy = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
-        copy.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
+        copy.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 145));
         copy.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        copy.Controls.Add(new Label { Text = "로컬 저장", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = UiTheme.Brand, Font = UiTheme.LabelFont }, 0, 0);
-        copy.Controls.Add(new Label { Text = "프로젝트와 가져온 파일은 이 PC에 보관됩니다. 업데이트를 확인할 때만 GitHub에 연결하며 프로젝트 자료는 전송하지 않습니다.", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = UiTheme.Ink, Font = UiTheme.BodyFont }, 1, 0);
+        copy.Controls.Add(new Label { Text = "현재 검사 범위", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = UiTheme.WarningInk, Font = UiTheme.LabelFont }, 0, 0);
+        var details = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
+        details.RowStyles.Add(new RowStyle(SizeType.Percent, 52));
+        details.RowStyles.Add(new RowStyle(SizeType.Percent, 48));
+        details.Controls.Add(new Label { Text = "가져온 요청은 실제 프로젝트로 전송되지 않습니다.", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = UiTheme.Ink, Font = UiTheme.LabelFont }, 0, 0);
+        details.Controls.Add(new Label { Text = "지금 실행할 수 있는 검사는 내장 로컬 예제뿐입니다. 프로젝트 자료는 이 PC에 저장됩니다.", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = UiTheme.WarningInk, Font = UiTheme.SmallFont }, 0, 1);
+        copy.Controls.Add(details, 1, 0);
         banner.Controls.Add(copy);
         return banner;
     }
 
-    private TableLayoutPanel BuildMetricsRow()
+    private Panel BuildGettingStartedCard()
     {
-        var row = new TableLayoutPanel { Height = 62, ColumnCount = 5, RowCount = 1, BackColor = UiTheme.Surface, Margin = new Padding(0, 0, 0, 10), Padding = new Padding(8, 2, 8, 2) };
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 1));
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 1));
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.34F));
-        row.Controls.Add(MetricItem("요청 경로", _requestMetric), 0, 0);
-        row.Controls.Add(MetricSeparator(), 1, 0);
-        row.Controls.Add(MetricItem("테스트 신원", _identityMetric), 2, 0);
-        row.Controls.Add(MetricSeparator(), 3, 0);
-        row.Controls.Add(MetricItem("기대 규칙", _ruleMetric), 4, 0);
-        return row;
+        var card = UiTheme.CreateCard(16);
+        card.Height = 178;
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.Controls.Add(SectionHeading("다음 단계", "요청 → 신원·규칙 → 로컬 예제 결과"), 0, 0);
+
+        var steps = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = new Padding(0, 3, 0, 0) };
+        steps.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 44));
+        steps.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
+        steps.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
+
+        var harButton = Button("HAR 가져오기", true);
+        harButton.Click += (_, _) => ImportFile(true);
+        var openApiButton = Button("OpenAPI", false);
+        openApiButton.Click += (_, _) => ImportFile(false);
+        steps.Controls.Add(BuildWorkflowStep("02", "요청 목록 만들기", "프로젝트 범위에 맞는 경로를 정리합니다.", _requestStepStatus, harButton, openApiButton), 0, 0);
+
+        var identityButton = Button("신원 설정", false);
+        identityButton.Click += (_, _) => ManageIdentities();
+        steps.Controls.Add(BuildWorkflowStep("03", "신원·규칙", "신원을 만든 뒤 표에서 허용·거부를 지정합니다.", _identityStepStatus, identityButton), 1, 0);
+
+        var exampleButton = Button("예제 보기", false);
+        exampleButton.Click += (_, _) => OpenLocalFixture();
+        steps.Controls.Add(BuildWorkflowStep("04", "결과 미리보기", "가상 서비스 · 가져온 요청과 별도", null, exampleButton), 2, 0);
+        layout.Controls.Add(steps, 0, 1);
+        card.Controls.Add(layout);
+        card.Paint += (_, args) => UiTheme.DrawCardBorder(card, args);
+        return card;
     }
 
-    private static Control MetricItem(string title, Label value)
+    private static Control BuildWorkflowStep(string number, string title, string description, Label? status, params Button[] actions)
     {
-        var content = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(14, 0, 14, 0), Margin = new Padding(0) };
-        content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        content.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 48));
-        content.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, ForeColor = UiTheme.MutedInk, Font = UiTheme.LabelFont, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
-        value.Dock = DockStyle.Fill;
-        value.ForeColor = UiTheme.Ink;
-        value.Font = UiTheme.MetricFont;
-        value.TextAlign = ContentAlignment.MiddleRight;
-        content.Controls.Add(value, 1, 0);
-        return content;
+        var panel = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.SurfaceMuted, Padding = new Padding(12, 8, 12, 8), Margin = new Padding(0, 0, 8, 0) };
+        var content = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = new Padding(0) };
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 25));
+        content.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        var heading = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = status is null ? 1 : 2, RowCount = 1, Margin = new Padding(0) };
+        heading.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        if (status is not null) heading.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 48));
+        heading.Controls.Add(new Label { Text = $"{number}  {title}", Dock = DockStyle.Fill, ForeColor = UiTheme.BrandDark, Font = UiTheme.StepFont, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true }, 0, 0);
+        if (status is not null)
+        {
+            status.Dock = DockStyle.Fill;
+            status.TextAlign = ContentAlignment.MiddleRight;
+            status.ForeColor = UiTheme.Brand;
+            status.Font = UiTheme.SmallFont;
+            heading.Controls.Add(status, 1, 0);
+        }
+        content.Controls.Add(heading, 0, 0);
+        content.Controls.Add(new Label { Text = description, Dock = DockStyle.Fill, ForeColor = UiTheme.MutedInk, Font = UiTheme.LabelFont, TextAlign = ContentAlignment.TopLeft, AutoEllipsis = true }, 0, 1);
+        var actionRow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, Margin = new Padding(0, 2, 0, 0) };
+        actionRow.Controls.AddRange(actions);
+        content.Controls.Add(actionRow, 0, 2);
+        panel.Controls.Add(content);
+        panel.Paint += (_, args) => UiTheme.DrawCardBorder(panel, args);
+        return panel;
     }
-
-    private static Control MetricSeparator() => new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.Border, Margin = new Padding(0, 12, 0, 12) };
 
     private Panel BuildProjectCard()
     {
@@ -239,15 +278,15 @@ internal sealed class MainForm : DpiAwareForm
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.Controls.Add(SectionHeading("프로젝트 설정", "이 PC에 저장되는 현재 작업 범위"), 0, 0);
+        layout.Controls.Add(SectionHeading("1. 프로젝트 범위", "주소와 경로는 목록 필터 · 요청 실행 안 함"), 0, 0);
 
         var fields = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = new Padding(0, 2, 0, 0) };
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30));
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45));
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
         fields.Controls.Add(FieldStack("프로젝트 이름", _name), 0, 0);
-        fields.Controls.Add(FieldStack("대상 주소", _origin), 1, 0);
-        fields.Controls.Add(FieldStack("API 경로", _prefix), 2, 0);
+        fields.Controls.Add(FieldStack("HAR origin 필터", _origin), 1, 0);
+        fields.Controls.Add(FieldStack("API 경로 접두사", _prefix), 2, 0);
         layout.Controls.Add(fields, 0, 1);
 
         _allowLocalFixtureWrites.ForeColor = UiTheme.Ink;
@@ -271,7 +310,7 @@ internal sealed class MainForm : DpiAwareForm
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.Controls.Add(SectionHeading("요청 목록", "요청별 테스트 신원과 기대 접근값을 설정하세요."), 0, 0);
+        layout.Controls.Add(SectionHeading("요청 목록", "각 요청에 테스트 신원과 허용·거부 기대값을 지정하세요."), 0, 0);
 
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, Margin = new Padding(0), Padding = new Padding(0, 4, 0, 0) };
         var harButton = Button("HAR 가져오기", false);
@@ -288,7 +327,7 @@ internal sealed class MainForm : DpiAwareForm
         var body = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.Surface, Margin = new Padding(0) };
         _grid.Dock = DockStyle.Fill;
         body.Controls.Add(_grid);
-        _emptyState.Text = "아직 요청이 없습니다\nHAR 또는 OpenAPI를 가져오거나 요청을 직접 추가하세요.";
+        _emptyState.Text = "아직 요청이 없습니다\n위 단계에서 HAR 또는 OpenAPI 파일을 가져오세요.";
         _emptyState.Dock = DockStyle.Fill;
         _emptyState.TextAlign = ContentAlignment.MiddleCenter;
         _emptyState.ForeColor = UiTheme.MutedInk;
@@ -809,9 +848,8 @@ internal sealed class MainForm : DpiAwareForm
         _grid.Visible = _scenarios.Count > 0;
         var assigned = _scenarios.Count(s => !string.IsNullOrEmpty(s.IdentityId));
         var specified = _scenarios.Count(s => s.Expectation != "미지정");
-        _requestMetric.Text = _scenarios.Count.ToString();
-        _identityMetric.Text = _identities.Count.ToString();
-        _ruleMetric.Text = specified.ToString();
+        _requestStepStatus.Text = $"{_scenarios.Count}개";
+        _identityStepStatus.Text = $"{_identities.Count}명";
         _summary.Text = $"요청 {_scenarios.Count}개 · 테스트 신원 {_identities.Count}개 · 신원 연결 {assigned}개 · 기대 접근값 지정 {specified}개 · 자료는 이 PC에 저장";
     }
 
