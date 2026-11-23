@@ -6,7 +6,7 @@
 
 ## 테스트 전에
 
-1. 사용성 테스트를 재개할 때는 앱을 v0.6.5 이상으로 업데이트하고 사이드바 아래 버전을 확인한다. 업데이트 확인이 실패하면 [GitHub Releases](https://github.com/minjunseo04/HackingProgram/releases/latest)에서 ZIP을 다시 받아 새 폴더에 압축을 풀어 실행한다.
+1. 사용자가 사용성 테스트를 명시적으로 요청한 뒤에만 진행한다. 진행할 때는 앱을 v0.6.6 이상으로 업데이트하고 사이드바 아래 버전을 확인한다. 업데이트 확인이 실패하면 [GitHub Releases](https://github.com/minjunseo04/HackingProgram/releases/latest)에서 ZIP을 다시 받아 새 폴더에 압축을 풀어 실행한다.
 2. 참가자에게 “앱 사용 중 막히는 지점을 찾는 테스트이며, 원하면 언제든 중단할 수 있다”고 설명한다. 동의한 경우에만 익명 메모를 남긴다. 이름·연락처·화면 녹화는 수집하지 않는다.
 3. 참가자에게 먼저 기능을 설명하거나 화면을 안내하지 않는다. 참가자가 요청해 도와준 경우 어느 단계에서 무엇을 알려줬는지 기록한다.
 4. 프로젝트 데이터와 인증 비밀이 들어 있는 파일은 사용하지 않는다. 저장소의 합성 자료 [`sample.har`](../poc/sample.har) 또는 [`sample-openapi.json`](../poc/sample-openapi.json) 중 하나만 가져온다. 두 자료에는 가짜 값만 있다.
