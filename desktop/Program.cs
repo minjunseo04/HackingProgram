@@ -7,11 +7,96 @@ namespace BoundaryCheck;
 
 internal static class Program
 {
+    private const string InstanceMutexName = @"Local\BoundaryCheck.SingleInstance";
+    private const string ActivateEventName = @"Local\BoundaryCheck.Activate";
+    private const int RestoreWindowCommand = 9;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool ShowWindowAsync(IntPtr windowHandle, int command);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr windowHandle);
+
     [STAThread]
     private static void Main()
     {
-        ApplicationConfiguration.Initialize();
-        Application.Run(new MainForm());
+        using var activateEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ActivateEventName);
+        using var instanceMutex = new Mutex(false, InstanceMutexName);
+        bool isFirstInstance;
+        try
+        {
+            isFirstInstance = instanceMutex.WaitOne(0);
+        }
+        catch (AbandonedMutexException)
+        {
+            isFirstInstance = true;
+        }
+
+        if (!isFirstInstance)
+        {
+            TryActivateRunningWindow(activateEvent, waitForWindow: true);
+            return;
+        }
+
+        if (TryActivateRunningWindow(activateEvent, waitForWindow: false))
+        {
+            instanceMutex.ReleaseMutex();
+            return;
+        }
+
+        try
+        {
+            ApplicationConfiguration.Initialize();
+            var mainForm = new MainForm();
+            using var activationTimer = new System.Windows.Forms.Timer { Interval = 250 };
+            activationTimer.Tick += (_, _) =>
+            {
+                if (activateEvent.WaitOne(0)) mainForm.ActivateFromSecondLaunch();
+            };
+            activationTimer.Start();
+            Application.Run(mainForm);
+        }
+        finally
+        {
+            instanceMutex.ReleaseMutex();
+        }
+    }
+
+    private static bool TryActivateRunningWindow(EventWaitHandle activateEvent, bool waitForWindow)
+    {
+        using var currentProcess = Process.GetCurrentProcess();
+        var stopwatch = Stopwatch.StartNew();
+        do
+        {
+            var foundRunningApp = false;
+            foreach (var process in Process.GetProcessesByName(currentProcess.ProcessName))
+            {
+                using (process)
+                {
+                    if (process.Id == currentProcess.Id) continue;
+                    try
+                    {
+                        if (process.SessionId != currentProcess.SessionId) continue;
+                        foundRunningApp = true;
+                        if (!string.Equals(process.MainWindowTitle, "BoundaryCheck", StringComparison.Ordinal)) continue;
+                        var windowHandle = process.MainWindowHandle;
+                        if (windowHandle == IntPtr.Zero) continue;
+                        ShowWindowAsync(windowHandle, RestoreWindowCommand);
+                        if (!SetForegroundWindow(windowHandle)) activateEvent.Set();
+                        return true;
+                    }
+                    catch (InvalidOperationException) { }
+                    catch (System.ComponentModel.Win32Exception) { }
+                }
+            }
+
+            if (!waitForWindow || !foundRunningApp) return false;
+            Thread.Sleep(50);
+        }
+        while (stopwatch.Elapsed < TimeSpan.FromSeconds(2));
+
+        activateEvent.Set();
+        return true;
     }
 }
 
@@ -83,6 +168,14 @@ internal sealed class MainForm : DpiAwareForm
         Controls.Add(shell);
         ConfigureGrid();
         LoadProject();
+    }
+
+    public void ActivateFromSecondLaunch()
+    {
+        if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
+        if (!Visible) Show();
+        Activate();
+        BringToFront();
     }
 
     protected override void OnLoad(EventArgs e)

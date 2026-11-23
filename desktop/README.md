@@ -1,6 +1,6 @@
 # BoundaryCheck Windows desktop app
 
-- 현재 소스 버전: **0.6.6**
+- 현재 소스 버전: **0.6.7**
 - 공개 GitHub Release: [최신 릴리스](https://github.com/minjunseo04/HackingProgram/releases/latest)
 
 ## 실행
@@ -36,6 +36,11 @@ GitHub Releases에서 `BoundaryCheck-win-x64.zip` 전체를 새 폴더에 압축
 - 앱 안에서 Chrome/Edge의 HAR 내보내기 순서, 개발 담당자에게 요청할 파일 이름과 지원 범위를 확인할 수 있습니다.
 - HAR에 로그인 쿠키나 토큰이 포함될 수 있음을 알리고, 테스트 계정을 사용하도록 안내합니다.
 - 사용자가 명시적으로 요청하기 전에는 사용성 테스트를 진행하지 않습니다.
+
+## v0.6.7 단일 실행
+
+- 앱이 이미 열려 있을 때 다시 실행하면 중복 창을 만들지 않고 기존 창을 복원해 앞으로 가져옵니다.
+- 기존 앱을 종료한 뒤 다시 실행하면 새 인스턴스가 정상적으로 열립니다.
 
 ## v0.6.1 UI 수정
 
