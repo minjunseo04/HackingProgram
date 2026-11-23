@@ -211,22 +211,29 @@ internal sealed class MainForm : DpiAwareForm
     private Panel BuildGettingStartedCard()
     {
         var card = UiTheme.CreateCard(16);
-        card.Height = 178;
+        card.Height = 186;
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.Controls.Add(SectionHeading("다음 단계", "요청 → 신원·규칙 → 로컬 예제 결과"), 0, 0);
+        var heading = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
+        heading.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        heading.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
+        heading.Controls.Add(new Label { Text = "시작하기", Dock = DockStyle.Fill, ForeColor = UiTheme.Ink, Font = UiTheme.SectionFont, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        var importHelp = new LinkLabel { Text = "필요한 파일 알아보기", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight, Font = UiTheme.SmallFont, LinkColor = UiTheme.Brand, ActiveLinkColor = UiTheme.BrandHover };
+        importHelp.LinkClicked += (_, _) => ShowImportGuide();
+        heading.Controls.Add(importHelp, 1, 0);
+        layout.Controls.Add(heading, 0, 0);
 
         var steps = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = new Padding(0, 3, 0, 0) };
         steps.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 44));
         steps.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
         steps.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
 
-        var harButton = Button("HAR 가져오기", true);
+        var harButton = Button("브라우저 기록 파일", true);
         harButton.Click += (_, _) => ImportFile(true);
-        var openApiButton = Button("OpenAPI", false);
+        var openApiButton = Button("API 문서 파일", false);
         openApiButton.Click += (_, _) => ImportFile(false);
-        steps.Controls.Add(BuildWorkflowStep("02", "요청 목록 만들기", "프로젝트 범위에 맞는 경로를 정리합니다.", _requestStepStatus, harButton, openApiButton), 0, 0);
+        steps.Controls.Add(BuildWorkflowStep("02", "파일 가져오기", "둘 중 하나면 됩니다: 브라우저 기록(.har) 또는 API 문서(.json)", _requestStepStatus, harButton, openApiButton), 0, 0);
 
         var identityButton = Button("신원 설정", false);
         identityButton.Click += (_, _) => ManageIdentities();
@@ -278,15 +285,15 @@ internal sealed class MainForm : DpiAwareForm
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.Controls.Add(SectionHeading("1. 프로젝트 범위", "주소와 경로는 목록 필터 · 요청 실행 안 함"), 0, 0);
+        layout.Controls.Add(SectionHeading("1. 가져올 범위", "이 주소와 경로에 맞는 항목만 정리합니다 · 서버로 보내지 않음"), 0, 0);
 
         var fields = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = new Padding(0, 2, 0, 0) };
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30));
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45));
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
         fields.Controls.Add(FieldStack("프로젝트 이름", _name), 0, 0);
-        fields.Controls.Add(FieldStack("HAR origin 필터", _origin), 1, 0);
-        fields.Controls.Add(FieldStack("API 경로 접두사", _prefix), 2, 0);
+        fields.Controls.Add(FieldStack("웹사이트 주소", _origin), 1, 0);
+        fields.Controls.Add(FieldStack("API 경로 시작 부분", _prefix), 2, 0);
         layout.Controls.Add(fields, 0, 1);
 
         _allowLocalFixtureWrites.ForeColor = UiTheme.Ink;
@@ -313,9 +320,9 @@ internal sealed class MainForm : DpiAwareForm
         layout.Controls.Add(SectionHeading("요청 목록", "각 요청에 테스트 신원과 허용·거부 기대값을 지정하세요."), 0, 0);
 
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, Margin = new Padding(0), Padding = new Padding(0, 4, 0, 0) };
-        var harButton = Button("HAR 가져오기", false);
+        var harButton = Button("브라우저 기록 파일", false);
         harButton.Click += (_, _) => ImportFile(true);
-        var openApiButton = Button("OpenAPI 가져오기", false);
+        var openApiButton = Button("API 문서 JSON 파일", false);
         openApiButton.Click += (_, _) => ImportFile(false);
         var duplicateButton = Button("선택 요청 복제", false);
         duplicateButton.Click += (_, _) => DuplicateSelectedScenario();
@@ -327,7 +334,7 @@ internal sealed class MainForm : DpiAwareForm
         var body = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.Surface, Margin = new Padding(0) };
         _grid.Dock = DockStyle.Fill;
         body.Controls.Add(_grid);
-        _emptyState.Text = "아직 요청이 없습니다\n위 단계에서 HAR 또는 OpenAPI 파일을 가져오세요.";
+        _emptyState.Text = "아직 가져온 경로가 없습니다\n내 앱에서 내보낸 브라우저 기록(.har) 또는 개발 API 문서(.json)를 가져오세요.\n필요한 파일을 모르겠다면 위 ‘필요한 파일 알아보기’를 선택하세요.";
         _emptyState.Dock = DockStyle.Fill;
         _emptyState.TextAlign = ContentAlignment.MiddleCenter;
         _emptyState.ForeColor = UiTheme.MutedInk;
@@ -436,6 +443,12 @@ internal sealed class MainForm : DpiAwareForm
     private void OpenLocalFixture()
     {
         using var dialog = new LocalFixtureDialog();
+        dialog.ShowDialog(this);
+    }
+
+    private void ShowImportGuide()
+    {
+        using var dialog = new ImportGuideDialog();
         dialog.ShowDialog(this);
     }
 
@@ -609,7 +622,11 @@ internal sealed class MainForm : DpiAwareForm
 
     private void ImportFile(bool isHar)
     {
-        using var picker = new OpenFileDialog { Filter = isHar ? "HAR 파일 (*.har;*.json)|*.har;*.json|모든 파일 (*.*)|*.*" : "OpenAPI JSON (*.json)|*.json|모든 파일 (*.*)|*.*", Title = isHar ? "HAR 파일 선택" : "OpenAPI JSON 파일 선택" };
+        using var picker = new OpenFileDialog
+        {
+            Filter = isHar ? "브라우저 기록 파일 (*.har;*.json)|*.har;*.json|모든 파일 (*.*)|*.*" : "개발 API 문서 (*.json)|*.json|모든 파일 (*.*)|*.*",
+            Title = isHar ? "브라우저에서 내보낸 기록 파일 선택" : "개발 API 문서 JSON 파일 선택",
+        };
         if (picker.ShowDialog(this) != DialogResult.OK) return;
         try
         {
@@ -617,24 +634,41 @@ internal sealed class MainForm : DpiAwareForm
             foreach (var item in imported) MergeScenario(item);
             UpdateSummary();
             SaveProject(false);
-            MessageBox.Show(this, $"{imported.Count}개 요청 템플릿을 확인했습니다. 실제 요청은 보내지 않았습니다.", "가져오기 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            var title = isHar ? "브라우저 기록 가져오기" : "API 명세 가져오기";
+            var message = imported.Count > 0
+            ? $"{imported.Count}개 경로를 목록에 반영했습니다.\n가져온 요청은 실제 프로젝트로 전송되지 않습니다."
+                : isHar
+                    ? "조건에 맞는 요청을 찾지 못했습니다.\n웹사이트 주소와 API 경로가 기록 파일과 맞는지 확인해 주세요. GET/PATCH 요청만 가져옵니다."
+                    : "조건에 맞는 경로를 찾지 못했습니다.\nAPI 경로를 확인해 주세요. OpenAPI 3.0/3.1 JSON의 GET/PATCH만 가져옵니다.";
+            MessageBox.Show(this, message, title, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, ex.Message, "가져오지 못했습니다", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, ex.Message, "파일을 읽지 못했습니다", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 
     private List<Scenario> ParseHar(string file)
     {
-        using var doc = ReadJson(file);
-        var entries = doc.RootElement.GetProperty("log").GetProperty("entries");
+        using var doc = ReadJson(file, "유효한 브라우저 기록 JSON이 아닙니다. .har 파일을 선택하세요.");
+        if (doc.RootElement.ValueKind != JsonValueKind.Object
+            || !doc.RootElement.TryGetProperty("log", out var log)
+            || log.ValueKind != JsonValueKind.Object
+            || !log.TryGetProperty("entries", out var entries)
+            || entries.ValueKind != JsonValueKind.Array)
+            throw new InvalidDataException("이 파일은 브라우저 요청 기록(.har)이 아닙니다. Chrome 또는 Edge 개발자 도구의 네트워크 탭에서 HAR로 내보낸 파일을 선택하세요.");
         if (entries.GetArrayLength() > 5000) throw new InvalidDataException("HAR 파일은 최대 5,000개 항목까지 가져올 수 있습니다.");
         var origin = ReadOrigin(); var prefix = ReadPrefix();
         var list = new List<Scenario>();
         foreach (var entry in entries.EnumerateArray())
         {
-            if (!entry.TryGetProperty("request", out var request) || !request.TryGetProperty("url", out var urlValue) || !request.TryGetProperty("method", out var methodValue)) continue;
+            if (entry.ValueKind != JsonValueKind.Object
+                || !entry.TryGetProperty("request", out var request)
+                || request.ValueKind != JsonValueKind.Object
+                || !request.TryGetProperty("url", out var urlValue)
+                || !request.TryGetProperty("method", out var methodValue)
+                || urlValue.ValueKind != JsonValueKind.String
+                || methodValue.ValueKind != JsonValueKind.String) continue;
             if (!Uri.TryCreate(urlValue.GetString(), UriKind.Absolute, out var uri) || uri.GetLeftPart(UriPartial.Authority) != origin) continue;
             var method = methodValue.GetString()?.ToUpperInvariant();
             var path = uri.AbsolutePath;
@@ -646,10 +680,13 @@ internal sealed class MainForm : DpiAwareForm
 
     private List<Scenario> ParseOpenApi(string file)
     {
-        using var doc = ReadJson(file);
+        using var doc = ReadJson(file, "이 파일을 읽을 수 없습니다. 앱은 OpenAPI 3.0/3.1 형식의 개발 API JSON 문서만 지원합니다. YAML은 사용할 수 없습니다. 파일을 찾기 어렵다면 개발 담당자에게 openapi.json을 요청하세요.");
         var root = doc.RootElement;
-        if (!root.TryGetProperty("openapi", out var version) || !Regex.IsMatch(version.GetString() ?? "", @"^3\.(0|1)\.")) throw new InvalidDataException("OpenAPI 3.0 또는 3.1 JSON 명세만 지원합니다.");
-        if (!root.TryGetProperty("paths", out var paths) || paths.ValueKind != JsonValueKind.Object) throw new InvalidDataException("명세에 paths 항목이 없습니다.");
+        if (root.ValueKind != JsonValueKind.Object) throw new InvalidDataException("이 파일은 API 문서 JSON 형식이 아닙니다. 개발 담당자에게 OpenAPI 3.0/3.1 JSON 파일을 요청하세요.");
+        if (!root.TryGetProperty("openapi", out var version)
+            || version.ValueKind != JsonValueKind.String
+            || !Regex.IsMatch(version.GetString() ?? "", @"^3\.(0|1)\.")) throw new InvalidDataException("이 API 문서는 지원되는 형식이 아닙니다. OpenAPI 3.0/3.1 JSON만 읽을 수 있어요. 파일을 찾기 어렵다면 개발 담당자에게 openapi.json을 요청하세요.");
+        if (!root.TryGetProperty("paths", out var paths) || paths.ValueKind != JsonValueKind.Object) throw new InvalidDataException("API 문서에서 요청 경로 목록을 찾지 못했습니다. OpenAPI 3.0/3.1 JSON 파일인지 확인해 주세요.");
         var prefix = ReadPrefix(); var list = new List<Scenario>();
         foreach (var pathEntry in paths.EnumerateObject())
         {
@@ -666,12 +703,12 @@ internal sealed class MainForm : DpiAwareForm
         return Deduplicate(list);
     }
 
-    private static JsonDocument ReadJson(string file)
+    private static JsonDocument ReadJson(string file, string invalidJsonMessage)
     {
         var info = new FileInfo(file);
         if (info.Length > 10 * 1024 * 1024) throw new InvalidDataException("입력 파일은 10 MiB를 넘을 수 없습니다.");
         try { return JsonDocument.Parse(File.ReadAllBytes(file)); }
-        catch (JsonException) { throw new InvalidDataException("유효한 JSON 파일이 아닙니다. OpenAPI YAML은 지원하지 않습니다."); }
+        catch (JsonException) { throw new InvalidDataException(invalidJsonMessage); }
     }
 
     private string ReadOrigin()
@@ -854,6 +891,79 @@ internal sealed class MainForm : DpiAwareForm
     }
 
     private sealed record IdentityChoice(string Id, string Label);
+}
+
+internal sealed class ImportGuideDialog : DpiAwareForm
+{
+    public ImportGuideDialog()
+    {
+        Text = "어떤 파일을 가져오나요?";
+        MinimumSize = new Size(640, 520);
+        Size = new Size(780, 700);
+        StartPosition = FormStartPosition.CenterParent;
+        BackColor = UiTheme.Canvas;
+        Font = UiTheme.BodyFont;
+
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(22), Margin = new Padding(0), BackColor = UiTheme.Canvas };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 84));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+
+        var intro = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
+        intro.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        intro.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        intro.Controls.Add(new Label { Text = "둘 중 하나만 있으면 돼요", Dock = DockStyle.Fill, ForeColor = UiTheme.Ink, Font = UiTheme.SectionFont, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        intro.Controls.Add(new Label { Text = "가져올 파일이 없다면 ‘예제 보기’를 눌러 가상 결과를 볼 수 있어요. 이 결과는 내 앱 검사 결과가 아닙니다.", Dock = DockStyle.Fill, ForeColor = UiTheme.MutedInk, Font = UiTheme.LabelFont, TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
+        layout.Controls.Add(intro, 0, 0);
+
+        var body = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Margin = new Padding(0), Padding = new Padding(0, 2, 0, 2), BackColor = UiTheme.Canvas };
+        body.Controls.Add(GuideCard(
+            "1. 내 앱에서 만든 브라우저 기록 (.har)",
+            "Chrome 또는 Edge에서 내 앱을 열고 F12를 누른 뒤 네트워크(Network) 탭을 선택하세요. 테스트 계정으로 로그인해 필요한 화면을 사용하고, 네트워크 요청 목록을 HAR 파일로 내보냅니다.\n\n파일에는 실제 사용 중 발생한 요청만 들어 있습니다. 본인 소유이거나 검사 승인을 받은 테스트 앱에서 기록하세요.",
+            164));
+        body.Controls.Add(GuideCard(
+            "2. 개발 API 문서 (.json)",
+            "개발 폴더나 API 문서 사이트에서 openapi.json을 찾거나, 개발 담당자에게 “OpenAPI 3.0/3.1 JSON 파일”을 요청하세요. 파일 안의 버전이 3.0 또는 3.1이어야 합니다.\n\nYAML(.yaml)과 Swagger 2.0 JSON은 지원하지 않습니다. 이름이 swagger.json이어도 파일 안에 OpenAPI 3.0/3.1이라고 표시된 경우에만 사용할 수 있습니다.",
+            164));
+        body.Controls.Add(GuideCard(
+            "가져오기 전에 확인하세요",
+            "코드 폴더, 압축 파일, 화면 캡처, 비밀번호는 가져올 필요가 없습니다. HAR에는 로그인 쿠키나 토큰이 포함될 수 있으니 테스트 계정으로 기록하고 파일을 공개하지 마세요.\n\n웹사이트 주소에는 도메인만 입력하세요(예: https://myapp.com, /login은 제외). API 경로는 /api/ 또는 /v1/처럼 시작 부분을 입력합니다. 조건에 맞는 GET/PATCH의 방식·경로만 이 PC에 저장합니다. 헤더·쿠키·검색어·본문은 저장하지 않고 실제 서버로 요청도 보내지 않습니다. 경로에 사용자 ID 같은 정보가 있는지 가져온 뒤 확인하세요.",
+            190,
+            warning: true));
+        layout.Controls.Add(body, 0, 1);
+
+        body.SizeChanged += (_, _) =>
+        {
+            var width = Math.Max(300, body.ClientSize.Width - body.Padding.Horizontal - 8);
+            foreach (Control control in body.Controls) control.Width = width;
+        };
+
+        var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Margin = new Padding(0), Padding = new Padding(0, 6, 0, 0) };
+        var close = MainForm.Button("닫기", true);
+        close.Click += (_, _) => Close();
+        footer.Controls.Add(close);
+        layout.Controls.Add(footer, 0, 2);
+        Controls.Add(layout);
+    }
+
+    private static Panel GuideCard(string title, string description, int height, bool warning = false)
+    {
+        var card = new Panel
+        {
+            Height = height,
+            BackColor = warning ? UiTheme.WarningSoft : UiTheme.Surface,
+            Padding = new Padding(15, 10, 15, 10),
+            Margin = new Padding(0, 0, 0, 10),
+        };
+        var content = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = new Padding(0) };
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+        content.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        content.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, ForeColor = warning ? UiTheme.WarningInk : UiTheme.BrandDark, Font = UiTheme.StepFont, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        content.Controls.Add(new Label { Text = description, Dock = DockStyle.Fill, ForeColor = warning ? UiTheme.WarningInk : UiTheme.Ink, Font = UiTheme.LabelFont, TextAlign = ContentAlignment.TopLeft }, 0, 1);
+        card.Controls.Add(content);
+        card.Paint += (_, args) => UiTheme.DrawCardBorder(card, args);
+        return card;
+    }
 }
 
 internal sealed class TestIdentityDialog : DpiAwareForm
