@@ -88,6 +88,8 @@ internal static class UiTheme
         root.PerformLayout();
     }
 
+    public static int ScaleLogical(int value, int dpi) => Scale(value, Math.Max(1, dpi) / 96f);
+
     private static void ScaleControlTree(Control control, float factor, Control root, bool scaleFormBounds)
     {
         control.Padding = Scale(control.Padding, factor);

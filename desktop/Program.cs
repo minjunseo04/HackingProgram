@@ -85,6 +85,24 @@ internal sealed class MainForm : DpiAwareForm
         LoadProject();
     }
 
+    protected override void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+        if (_workspaceScroll is not null) FitWorkspaceCards(_workspaceScroll);
+    }
+
+    protected override void OnShown(EventArgs e)
+    {
+        base.OnShown(e);
+        if (_workspaceScroll is not null) FitWorkspaceCards(_workspaceScroll);
+    }
+
+    protected override void OnDpiChanged(DpiChangedEventArgs e)
+    {
+        base.OnDpiChanged(e);
+        if (_workspaceScroll is not null) FitWorkspaceCards(_workspaceScroll);
+    }
+
     private readonly Label _emptyState = new();
 
     private Control BuildSidebar()
@@ -303,6 +321,23 @@ internal sealed class MainForm : DpiAwareForm
     {
         var width = Math.Max(560, body.ClientSize.Width - body.Padding.Horizontal - 4);
         foreach (Control control in body.Controls) control.Width = width;
+
+        if (_requestCard is null || body.ClientSize.Height <= 0) return;
+
+        var precedingHeight = 0;
+        foreach (Control control in body.Controls)
+        {
+            if (ReferenceEquals(control, _requestCard)) break;
+            precedingHeight += control.Height + control.Margin.Vertical;
+        }
+        var availableHeight = body.ClientSize.Height
+            - body.Padding.Vertical
+            - precedingHeight
+            - _requestCard.Margin.Vertical;
+        var minHeight = UiTheme.ScaleLogical(260, DeviceDpi);
+        var preferredHeight = UiTheme.ScaleLogical(390, DeviceDpi);
+        var fittedHeight = Math.Max(minHeight, Math.Min(preferredHeight, availableHeight));
+        if (_requestCard.Height != fittedHeight) _requestCard.Height = fittedHeight;
     }
 
     private static Control FieldStack(string label, TextBox input)
